@@ -60,6 +60,8 @@ class PrEPPipeline {
 
         // Run the seed module
         if (config.seeding != null) {
+            println("Seeding Plagiarised Submissions")
+
             val seeding = config.seeding!!
             val dataRoot = root.resolve(seeding.dataRoot)
             val configFiles = seeding.configFiles.map { root.resolve(it) }
@@ -69,10 +71,12 @@ class PrEPPipeline {
 
         // Run the normalisation module
         if (config.normalisation != null) {
+            println("Normalising Submissions")
             normalisationModule.execute(config.normalisation!!)
         }
 
         // Run the detection module
+        println("Executing Detection Tools")
         detectionModule.execute(config.detection, listings)
 
         // Store the results

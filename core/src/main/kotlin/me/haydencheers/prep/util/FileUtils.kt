@@ -8,6 +8,18 @@ import java.nio.file.Path
 import java.nio.file.attribute.BasicFileAttributes
 
 object FileUtils {
+    /**
+     * Copies all files in @from to @to
+     */
+    fun copyDir(from: Path, to: Path) {
+        if (!Files.isDirectory(from)) throw IllegalArgumentException("File $from does not exist")
+
+        Files.walk(from)
+            .forEachOrdered { file ->
+                Files.copy(file, to.resolve(from.relativize(file)))
+            }
+    }
+
     fun listFiles(path: Path, extension: String): List<Path> {
         val visitor = GenericFileVisitor(extension)
         Files.walkFileTree(path, visitor)

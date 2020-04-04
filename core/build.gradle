@@ -3,7 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm'
 }
 
-group 'me.haydencheers'
+group 'me.haydencheers.prep'
 version '1.0-SNAPSHOT'
 
 sourceCompatibility = 1.8
@@ -24,16 +24,16 @@ dependencies {
     compile 'org.apache.johnzon:johnzon-jsonb:1.1.4'
 
     // Tool bindings
-    compile('me.haydencheers:naive') { version { branch = 'master' } }
-    compile('me.haydencheers:jplag') { version { branch = 'master' } }
-    compile('me.haydencheers:plaggie') { version { branch = 'master' } }
-    compile('me.haydencheers:sim') { version { branch = 'master' } }
-    compile('me.haydencheers:sherlock-warwick') { version { branch = 'master' } }
-    compile('me.haydencheers:sherlock-sydney') { version { branch = 'master' } }
+    compile('me.haydencheers.scpdt:naive') { version { branch = 'master' } }
+    compile('me.haydencheers.scpdt:jplag') { version { branch = 'master' } }
+    compile('me.haydencheers.scpdt:plaggie') { version { branch = 'master' } }
+    compile('me.haydencheers.scpdt:sim') { version { branch = 'master' } }
+    compile('me.haydencheers.scpdt:sherlock-warwick') { version { branch = 'master' } }
+    compile('me.haydencheers.scpdt:sherlock-sydney') { version { branch = 'master' } }
 
     // STRF
-    compile('me.haydencheers:beans') { version { branch = 'master' } }
-    compile('me.haydencheers:serialiser') { version { branch = 'master' } }
+    compile('me.haydencheers.strf:beans') { version { branch = 'master' } }
+    compile('me.haydencheers.strf:serialiser') { version { branch = 'master' } }
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }

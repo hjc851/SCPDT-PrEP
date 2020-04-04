@@ -1,24 +1,25 @@
 rootProject.name = 'SCPDT-PrEP'
 include 'core'
 include 'application'
+include 'simplag-binding'
 
 // Tool bindings
 sourceControl {
     gitRepository("https://github.com/hjc851/SCPDTBindings.git") {
-        producesModule("me.haydencheers:jplag")
-        producesModule("me.haydencheers:naive")
-        producesModule("me.haydencheers:plaggie")
-        producesModule("me.haydencheers:sherlock-warwick")
-        producesModule("me.haydencheers:sherlock-sydney")
-        producesModule("me.haydencheers:sim")
+        producesModule("me.haydencheers.scpdt:jplag")
+        producesModule("me.haydencheers.scpdt:naive")
+        producesModule("me.haydencheers.scpdt:plaggie")
+        producesModule("me.haydencheers.scpdt:sherlock-warwick")
+        producesModule("me.haydencheers.scpdt:sherlock-sydney")
+        producesModule("me.haydencheers.scpdt:sim")
     }
 }
 
 // STRF
 sourceControl {
     gitRepository("https://github.com/hjc851/SCPDSimpleToolResultFormat.git") {
-        producesModule("me.haydencheers:beans")
-        producesModule("me.haydencheers:serialiser")
+        producesModule("me.haydencheers.strf:beans")
+        producesModule("me.haydencheers.strf:serialiser")
     }
 }
 

@@ -24,11 +24,11 @@ class ToolBindingFactory {
     fun produceBindings(): List<SCPDTool> {
         val tools = mutableListOf<SCPDTool>()
 
-        if (prep.config.detection.useJPlag) tools.add(JPlagSCPDT)
-        if (prep.config.detection.usePlaggie) tools.add(PlaggieSCPDT)
+        if (prep.config.detection.useJPlag) tools.add(JPlagSCPDT())
+        if (prep.config.detection.usePlaggie) tools.add(PlaggieSCPDT())
         if (prep.config.detection.useSim) tools.add(SimWineSCPDTool())
-        if (prep.config.detection.useSherlockWarwick) tools.add(SherlockWarwickSCPDT)
-        if (prep.config.detection.useSherlockSydney) tools.add(SherlockSydneySCPDT)
+        if (prep.config.detection.useSherlockWarwick) tools.add(SherlockWarwickSCPDT())
+        if (prep.config.detection.useSherlockSydney) tools.add(SherlockSydneySCPDT())
         if (prep.config.detection.useNaiveStringEditDistance) tools.add(NaiveStringEditDistanceSCPDT())
         if (prep.config.detection.useNaiveStringTiling) tools.add(NaiveStringTilingSCPDT())
         if (prep.config.detection.useNaiveTokenEditDistance) tools.add(NaiveTokenEditDistanceSCPDT())

@@ -3,12 +3,12 @@ package me.haydencheers.prep.seeding
 import me.haydencheers.prep.SeedConfig
 import me.haydencheers.prep.beans.SubmissionListing
 import me.haydencheers.prep.results.ResultModule
+import me.haydencheers.prep.bindings.SimPlagBinding
 import java.nio.file.Files
 import java.nio.file.Path
 import javax.annotation.PreDestroy
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.roundToInt
 import kotlin.random.Random
 
 @Singleton
@@ -25,6 +25,9 @@ class SeedModule {
         seedDataRoot: Path,
         configFiles: List<Path>
     ) {
+        val simplagBinding = SimPlagBinding()
+        simplagBinding.thaw(Files.createDirectory(temp.resolve("simplag")))
+
         for (i in 0 until configFiles.size) {
             val configFile = configFiles[i]
 
@@ -38,33 +41,13 @@ class SeedModule {
             }
 
             val seedListings = listings.filter { seedSubmissionIds.contains(it.name) }
-            runSimPlag(seedListings, seedDataRoot, configFile)
+            val generatedListings = simplagBinding.execute(seedListings, seedDataRoot, configFile, temp.resolve("generated-$i"))
+
+            listings.addAll(generatedListings)
+            resultsModule.addSyntheticSubmissions(generatedListings.map { it.name })
         }
 
-
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    private fun runSimPlag (
-        submissions: List<SubmissionListing>,
-        seedDataRoot: Path,
-        configFile: Path
-    ) {
-        val simplag = this.javaClass.getResource("/simplag/app-1.0-SNAPSHOT.jar").path
-        val java = System.getProperty("java.home") + "/bin/java"
-        val proc = ProcessBuilder()
-            .command(java, "-jar", simplag)
-            .start()
-
-        proc.waitFor()
-
-        val out = proc.inputStream.reader()
-            .readLines()
-
-        val err = proc.errorStream.reader()
-            .readLines()
-
-        TODO()
+        simplagBinding.close()
     }
 
     @PreDestroy
