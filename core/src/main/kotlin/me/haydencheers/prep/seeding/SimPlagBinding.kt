@@ -1,4 +1,4 @@
-package me.haydencheers.prep.bindings
+package me.haydencheers.prep.seeding
 
 import me.haydencheers.prep.beans.ListingsFactory
 import me.haydencheers.prep.beans.SubmissionListing
@@ -61,6 +61,9 @@ class SimPlagBinding: Closeable {
                 generatedListings.forEach { it.name = "${generatedOutputRoot.fileName}-${it.name}" }
                 output.addAll(generatedListings)
             } else {
+                val out = proc.inputStream.bufferedReader().readLines()
+                val err = proc.errorStream.bufferedReader().readLines()
+
                 System.err.println("SimPlag returned error code: $result")
             }
 

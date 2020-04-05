@@ -1,4 +1,4 @@
-package me.haydencheers.prep.bindings
+package me.haydencheers.prep.seeding
 
 import java.time.Instant
 import javax.json.bind.annotation.JsonbTransient
@@ -11,8 +11,10 @@ class SimPlagConfig {
 
     var randomSeed: Long = Instant.now().epochSecond
 
-    var inject: InjectConfig = InjectConfig()
-    var mutate: MutateConfig = MutateConfig()
+    var inject: InjectConfig =
+        InjectConfig()
+    var mutate: MutateConfig =
+        MutateConfig()
 
     var copies: Int = 10
 

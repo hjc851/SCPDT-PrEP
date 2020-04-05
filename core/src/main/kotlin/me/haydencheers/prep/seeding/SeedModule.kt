@@ -3,7 +3,6 @@ package me.haydencheers.prep.seeding
 import me.haydencheers.prep.SeedConfig
 import me.haydencheers.prep.beans.SubmissionListing
 import me.haydencheers.prep.results.ResultModule
-import me.haydencheers.prep.bindings.SimPlagBinding
 import java.nio.file.Files
 import java.nio.file.Path
 import javax.annotation.PreDestroy
