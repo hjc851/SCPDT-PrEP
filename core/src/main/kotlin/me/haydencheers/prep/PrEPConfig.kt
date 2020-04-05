@@ -7,6 +7,7 @@ import kotlin.random.Random
 class PrEPConfig {
     lateinit var submissionRoot: String
     lateinit var outputRoot: String
+    lateinit var workingRoot: String
 
     var randomSeed = Instant.now().nano
 

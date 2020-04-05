@@ -23,7 +23,8 @@ class SeedModule {
         random: Random,
         listings: MutableList<SubmissionListing>,
         seedDataRoot: Path,
-        configFiles: List<Path>
+        configFiles: List<Path>,
+        workingRoot: Path
     ) {
         val simplagBinding = SimPlagBinding()
         simplagBinding.thaw(Files.createDirectory(temp.resolve("simplag")))
@@ -41,7 +42,7 @@ class SeedModule {
             }
 
             val seedListings = listings.filter { seedSubmissionIds.contains(it.name) }
-            val generatedListings = simplagBinding.execute(seedListings, seedDataRoot, configFile, temp.resolve("generated-$i"))
+            val generatedListings = simplagBinding.execute(seedListings, seedDataRoot, configFile, workingRoot.resolve("generated-$i"))
 
             listings.addAll(generatedListings)
             resultsModule.addSyntheticSubmissions(generatedListings.map { it.name })

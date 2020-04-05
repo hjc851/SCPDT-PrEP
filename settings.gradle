@@ -2,6 +2,7 @@ rootProject.name = 'SCPDT-PrEP'
 include 'core'
 include 'application'
 include 'simplag-binding'
+include 'normalise'
 
 // Tool bindings
 sourceControl {
@@ -22,5 +23,3 @@ sourceControl {
         producesModule("me.haydencheers.strf:serialiser")
     }
 }
-
-

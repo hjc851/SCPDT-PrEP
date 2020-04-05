@@ -5,6 +5,7 @@ import me.haydencheers.prep.detection.DetectionModule
 import me.haydencheers.prep.normalisation.NormalisationModule
 import me.haydencheers.prep.results.ResultModule
 import me.haydencheers.prep.seeding.SeedModule
+import me.haydencheers.prep.util.FileUtils
 import me.haydencheers.prep.util.JsonSerialiser
 import java.nio.file.Files
 import java.nio.file.Path
@@ -44,6 +45,7 @@ class PrEPPipeline {
 
         val submissionRoot = root.resolve(config.submissionRoot)
         val outputRoot = root.resolve(config.outputRoot)
+        val workingRoot = root.resolve(config.workingRoot)
 
         // Validate config parameters
         if (!Files.exists(submissionRoot) || !Files.isDirectory(submissionRoot)) throw IllegalArgumentException("Input source ${submissionRoot} does not exist or is not a folder")
@@ -54,8 +56,17 @@ class PrEPPipeline {
                 .forEach(Files::delete)
         Files.createDirectory(outputRoot)
 
-        // Load the projects as a mutable listing
-        val listings = ListingsFactory.produceForDirectory(submissionRoot)
+        if (Files.exists(workingRoot))
+            Files.walk(workingRoot)
+                .sorted(Comparator.reverseOrder())
+                .forEach(Files::delete)
+        Files.createDirectory(workingRoot)
+
+        // Copy projects to a tmp directory + load the projects as a mutable listing
+        val projsRoot = workingRoot.resolve("submissions")
+        FileUtils.copyDir(submissionRoot, projsRoot)
+
+        val listings = ListingsFactory.produceForDirectory(projsRoot, true)
         resultsModule.addRealSubmissions(listings.map { it.name })
 
         // Run the seed module
@@ -66,13 +77,13 @@ class PrEPPipeline {
             val dataRoot = root.resolve(seeding.dataRoot)
             val configFiles = seeding.configFiles.map { root.resolve(it) }
 
-            seedModule.execute(seeding, config.random, listings, dataRoot, configFiles)
+            seedModule.execute(seeding, config.random, listings, dataRoot, configFiles, workingRoot)
         }
 
         // Run the normalisation module
         if (config.normalisation != null) {
             println("Normalising Submissions")
-            normalisationModule.execute(config.normalisation!!)
+            normalisationModule.execute(config.normalisation!!, listings)
         }
 
         // Run the detection module

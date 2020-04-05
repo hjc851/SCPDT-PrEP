@@ -25,49 +25,52 @@ class SimPlagBinding: Closeable {
             .toAbsolutePath()
             .toString()
 
-        val tmp = Files.createTempDirectory("simplag")
+        val tmp = Files.createTempDirectory("simplag-work")
 
-        // Deserialise the config, override the in values, write to dir
-        val cfgPath = tmp.resolve("config.json")
-        val configBean = JsonSerialiser.deserialise(configFile, SimPlagConfig::class)
-        configBean.input = "src"
-        configBean.injectionSources = "seed"
-        configBean.output = "out"
-        JsonSerialiser.serialise(configBean, cfgPath)
+        try {
+            // Deserialise the config, override the in values, write to dir
+            val cfgPath = tmp.resolve("config.json")
+            val configBean = JsonSerialiser.deserialise(configFile, SimPlagConfig::class)
+            configBean.input = "src"
+            configBean.injectionSources = "seed"
+            configBean.output = "out"
+            JsonSerialiser.serialise(configBean, cfgPath)
 
-        // Copy over the sources & seeds
-        val srcRoot = Files.createDirectory(tmp.resolve("src"))
-        val seedRoot = tmp.resolve("seed")
-        val outRoot = Files.createDirectory(tmp.resolve("out"))
+            // Copy over the sources & seeds
+            val srcRoot = Files.createDirectory(tmp.resolve("src"))
+            val seedRoot = tmp.resolve("seed")
+            val outRoot = Files.createDirectory(tmp.resolve("out"))
 
-        for (submission in submissions) {
-            FileUtils.copyDir(submission.root, srcRoot.resolve(submission.name))
+            for (submission in submissions) {
+                FileUtils.copyDir(submission.root, srcRoot.resolve(submission.name))
+            }
+
+            FileUtils.copyDir(seedDataRoot, seedRoot)
+
+            // Execute tool
+            val proc = ProcessBuilder()
+                .command(java, "-jar", simplag, cfgPath.toAbsolutePath().toString())
+                .start()
+
+            val result = proc.waitFor()
+
+            val output = mutableListOf<SubmissionListing>()
+            if (result == 0) {
+                FileUtils.copyDir(outRoot, generatedOutputRoot)
+                val generatedListings = ListingsFactory.produceForDirectory(generatedOutputRoot, true)
+                generatedListings.forEach { it.name = "${generatedOutputRoot.fileName}-${it.name}" }
+                output.addAll(generatedListings)
+            } else {
+                System.err.println("SimPlag returned error code: $result")
+            }
+
+            return output
+
+        } finally {
+            Files.walk(tmp)
+                .sorted(Comparator.reverseOrder())
+                .forEach(Files::delete)
         }
-
-        FileUtils.copyDir(seedDataRoot, seedRoot)
-
-        // Execute tool
-        val proc = ProcessBuilder()
-            .command(java, "-jar", simplag, cfgPath.toAbsolutePath().toString())
-            .start()
-
-        val result = proc.waitFor()
-
-        val output = mutableListOf<SubmissionListing>()
-        if (result == 0) {
-            FileUtils.copyDir(outRoot, generatedOutputRoot)
-            val generatedListings = ListingsFactory.produceForDirectory(generatedOutputRoot)
-            generatedListings.forEach { it.name = "${generatedOutputRoot.fileName}-${it.name}" }
-            output.addAll(generatedListings)
-        } else {
-            System.err.println("SimPlag returned error code: $result")
-        }
-
-        Files.walk(tmp)
-            .sorted(Comparator.reverseOrder())
-            .forEach(Files::delete)
-
-        return output
     }
 
     fun thaw(path: Path) {

@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+group 'me.haydencheers.prep'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
+    //  Java Formatting
+    compile 'com.google.googlejavaformat:google-java-format:1.7'
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+
+    // Comment removal + reordering
+    compile group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.core', version: '3.+'
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
