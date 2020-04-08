@@ -40,11 +40,15 @@ class SeedModule {
                 }
             }
 
+            val batchid = "generated-$i"
+            val workdir = workingRoot.resolve(batchid)
+
             val seedListings = listings.filter { seedSubmissionIds.contains(it.name) }
-            val generatedListings = simplagBinding.execute(seedListings, seedDataRoot, configFile, workingRoot.resolve("generated-$i"))
+            val generatedListings = simplagBinding.execute(seedListings, seedDataRoot, configFile, workdir)
 
             listings.addAll(generatedListings)
             resultsModule.addSyntheticSubmissions(generatedListings.map { it.name })
+            resultsModule.addSimplagAnalytics(batchid, workdir.resolve("analytics.json.zip"))
         }
 
         simplagBinding.close()

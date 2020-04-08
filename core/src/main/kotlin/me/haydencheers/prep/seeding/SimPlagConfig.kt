@@ -11,10 +11,8 @@ class SimPlagConfig {
 
     var randomSeed: Long = Instant.now().epochSecond
 
-    var inject: InjectConfig =
-        InjectConfig()
-    var mutate: MutateConfig =
-        MutateConfig()
+    var inject: InjectConfig = InjectConfig()
+    var mutate: MutateConfig = MutateConfig()
 
     var copies: Int = 10
 

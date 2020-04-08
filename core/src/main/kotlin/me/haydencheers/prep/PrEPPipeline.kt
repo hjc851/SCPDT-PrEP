@@ -13,6 +13,7 @@ import java.nio.file.Paths
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.random.Random
+import kotlin.system.exitProcess
 
 @Singleton
 class PrEPPipeline {
@@ -67,6 +68,7 @@ class PrEPPipeline {
         FileUtils.copyDir(submissionRoot, projsRoot)
 
         val listings = ListingsFactory.produceForDirectory(projsRoot, true)
+        listings.sortBy { it.name }
         resultsModule.addRealSubmissions(listings.map { it.name })
 
         // Run the seed module
@@ -87,13 +89,16 @@ class PrEPPipeline {
         }
 
         // Run the detection module
-        println("Executing Detection Tools")
-        detectionModule.execute(config.detection, listings)
+        println("Executing Detection Tools for Submission-wise Similarity")
+        detectionModule.executePairwise(config.detection, listings)
+
+        println("Executing Detection Tools for File-wise Similarity")
+        detectionModule.executeFilewise(config.detection, listings)
 
         // Store the results
         resultsModule.storeResults(outputRoot)
 
         // Cleanup + exit
-        System.exit(0)
+        exitProcess(0)
     }
 }
