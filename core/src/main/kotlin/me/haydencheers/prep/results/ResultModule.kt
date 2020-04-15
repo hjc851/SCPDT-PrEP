@@ -21,6 +21,9 @@ class ResultModule {
     private var pairwiseScores = mutableMapOf<String, List<Triple<String, String, Double>>>()
     private var filewiseScores = mutableMapOf<String, List<Triple<String, String, List<Triple<String, String, Double>>>>>()
 
+    private var pairwiseDurations = mutableMapOf<String, Long>()
+    private var filewiseDurations = mutableMapOf<String, Long>()
+
     fun addRealSubmissions(submissions: List<String>) {
         realSubmissions.addAll(realSubmissions)
     }
@@ -58,6 +61,38 @@ class ResultModule {
 
         // Scores
         saveEvaluationBeans(outputRoot)
+
+        // Durations
+        val durBean = Json.createObjectBuilder()
+            .add("pairwise",
+                Json.createArrayBuilder()
+                    .apply {
+                        for ((tool, duration) in pairwiseDurations) {
+                            this.add(
+                                Json.createObjectBuilder()
+                                    .add("tool", tool)
+                                    .add("duration", duration)
+                                    .build()
+                            )
+                        }
+                    }.build()
+            )
+            .add("filewise",
+                Json.createArrayBuilder()
+                    .apply {
+                        for ((tool, duration) in filewiseDurations) {
+                            this.add(
+                                Json.createObjectBuilder()
+                                    .add("tool", tool)
+                                    .add("duration", duration)
+                                    .build()
+                            )
+                        }
+                    }.build()
+            )
+            .build()
+
+        JsonSerialiser.serialise(durBean, outputRoot.resolve("durations.json"))
     }
 
     private fun saveEvaluationBeans(outputRoot: Path) {
@@ -94,5 +129,13 @@ class ResultModule {
 
             STRFSerialiser.serialise(resultBean, outputRoot.resolve("scores-$tool.strf"))
         }
+    }
+
+    fun addPairwiseDuration(id: String, seconds: Long) {
+        pairwiseDurations[id] = seconds
+    }
+
+    fun addFilewiseDuration(id: String, seconds: Long) {
+        filewiseDurations[id] = seconds
     }
 }
