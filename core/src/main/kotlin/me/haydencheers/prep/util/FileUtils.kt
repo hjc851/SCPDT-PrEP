@@ -1,10 +1,7 @@
 package me.haydencheers.prep.util
 
 import java.io.IOException
-import java.nio.file.FileVisitResult
-import java.nio.file.FileVisitor
-import java.nio.file.Files
-import java.nio.file.Path
+import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import kotlin.streams.toList
 
@@ -18,7 +15,7 @@ object FileUtils {
         Files.walk(from)
             .filter { !Files.isHidden(it) && !it.fileName.toString().startsWith(".") }
             .forEachOrdered { file ->
-                Files.copy(file, to.resolve(from.relativize(file)))
+                Files.copy(file, to.resolve(from.relativize(file)), StandardCopyOption.REPLACE_EXISTING)
             }
     }
 

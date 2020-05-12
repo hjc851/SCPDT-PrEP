@@ -99,7 +99,7 @@ class ResultModule {
         val tools = pairwiseScores.keys
         for (tool in tools) {
             val pairwise = pairwiseScores[tool]!!
-            val filewise = filewiseScores[tool]!!
+            val filewise = filewiseScores[tool]
 
             val ids = mutableSetOf<String>()
             val pairwiseResults = mutableListOf<PairwiseComparisonResult>()
@@ -108,9 +108,11 @@ class ResultModule {
                 ids.add(lhs)
                 ids.add(rhs)
 
-                val filewiseResults = filewise.filter { it.first == lhs && it.second == rhs || it.first == lhs && it.second == rhs }
-                    .flatMap { it.third }
-                    .map { FileComparisonResult(it.first, it.second, it.third) }
+                val filewiseResults = filewise
+                    ?.filter { it.first == lhs && it.second == rhs || it.first == lhs && it.second == rhs }
+                    ?.flatMap { it.third }
+                    ?.map { FileComparisonResult(it.first, it.second, it.third) }
+                    ?: emptyList()
 
                 val pairwise = PairwiseComparisonResult (
                     lhs,
@@ -118,6 +120,7 @@ class ResultModule {
                     filewiseResults,
                     score
                 )
+
                 pairwiseResults.add(pairwise)
             }
 

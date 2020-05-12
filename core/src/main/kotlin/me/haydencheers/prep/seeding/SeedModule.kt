@@ -1,6 +1,7 @@
 package me.haydencheers.prep.seeding
 
 import me.haydencheers.prep.SeedConfig
+import me.haydencheers.prep.beans.ListingsFactory
 import me.haydencheers.prep.beans.SubmissionListing
 import me.haydencheers.prep.results.ResultModule
 import java.nio.file.Files
@@ -46,7 +47,16 @@ class SeedModule {
             val seedListings = listings.filter { seedSubmissionIds.contains(it.name) }
             val generatedListings = simplagBinding.execute(seedListings, seedDataRoot, configFile, workdir)
 
-            listings.addAll(generatedListings)
+            for (listing in generatedListings) {
+                if (listing.name.contains("-")) {
+                    val newRoot = Files.move(listing.root, listing.root.parent.resolve(listing.name.replace("-", "_")))
+                    val replacement = ListingsFactory.produceForSubmission(newRoot, true)
+                    listings.add(replacement)
+                } else {
+                    listings.add(listing)
+                }
+            }
+
             resultsModule.addSyntheticSubmissions(generatedListings.map { it.name })
             resultsModule.addSimplagAnalytics(batchid, workdir.resolve("analytics.json.zip"))
         }

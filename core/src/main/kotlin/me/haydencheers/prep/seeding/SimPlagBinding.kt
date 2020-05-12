@@ -65,6 +65,10 @@ class SimPlagBinding: Closeable {
                 val err = proc.errorStream.bufferedReader().readLines()
 
                 System.err.println("SimPlag returned error code: $result")
+                out.forEach(System.out::println)
+                err.forEach(System.err::println)
+
+                throw IllegalStateException()
             }
 
             return output

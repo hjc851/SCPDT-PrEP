@@ -3,6 +3,8 @@ include 'core'
 include 'application'
 include 'simplag-binding'
 include 'normalise'
+include 'batch'
+include 'scripts'
 
 // Tool bindings
 sourceControl {
@@ -23,3 +25,6 @@ sourceControl {
         producesModule("me.haydencheers.strf:serialiser")
     }
 }
+include 'batch'
+include 'scripts'
+

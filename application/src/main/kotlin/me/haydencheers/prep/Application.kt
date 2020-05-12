@@ -11,5 +11,6 @@ object Application {
                 .get()
                 .run(args)
         }
+        System.exit(0)
     }
 }

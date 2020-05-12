@@ -9,8 +9,10 @@ class PrEPConfig {
     lateinit var outputRoot: String
     lateinit var workingRoot: String
 
-    var randomSeed = Instant.now().nano
+    var submissionsArePlaintiff: Boolean = false
+    var executeFilewise: Boolean = true
 
+    var randomSeed = Instant.now().nano
     @JsonbTransient
     lateinit var random: Random
 
@@ -35,6 +37,7 @@ class NormalisationConfig {
 
 class DetectionConfig {
     var maxParallelism = Runtime.getRuntime().availableProcessors() / 2
+    var mxHeap: String? = null
 
     var useJPlag = true
     var usePlaggie = true
