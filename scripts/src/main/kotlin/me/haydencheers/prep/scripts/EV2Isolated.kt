@@ -116,16 +116,17 @@ object EV2Isolated {
                                 val success = executePrEP(configFile, tmp, outf, errf, RETRY_COUNT)
 
                                 if (!success) {
-                                    System.err.println("Failed: ${submission.fileName.toString()} ${pname}")
+                                    System.err.println("Failed: ${submission.fileName.toString()} ${pname} ${transformation}")
+                                } else {
+                                    Files.createDirectories(storeOut)
+                                    Files.createDirectories(storeWork)
+
+                                    FileUtils.copyDir(out, storeOut)
+                                    FileUtils.copyDir(work, storeWork)
                                 }
 
-                                Files.createDirectories(storeOut)
-                                Files.createDirectories(storeWork)
+
                                 Files.createDirectories(storeLogs)
-
-                                FileUtils.copyDir(out, storeOut)
-                                FileUtils.copyDir(work, storeWork)
-
                                 Files.copy(outf, storeLogs.resolve("stdout.txt"), StandardCopyOption.REPLACE_EXISTING)
                                 Files.copy(errf, storeLogs.resolve("stderr.txt"), StandardCopyOption.REPLACE_EXISTING)
 

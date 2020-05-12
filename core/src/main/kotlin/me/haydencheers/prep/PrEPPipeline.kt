@@ -1,6 +1,7 @@
 package me.haydencheers.prep
 
 import me.haydencheers.prep.beans.ListingsFactory
+import me.haydencheers.prep.crawler.GitHubCrawlerModule
 import me.haydencheers.prep.detection.DetectionModule
 import me.haydencheers.prep.normalisation.NormalisationModule
 import me.haydencheers.prep.results.ResultModule
@@ -32,6 +33,9 @@ class PrEPPipeline {
 
     @Inject
     lateinit var resultsModule: ResultModule
+
+    @Inject
+    lateinit var githubModule: GitHubCrawlerModule
 
     fun run(args: Array<String>) {
         if (args.count() != 1) throw IllegalArgumentException("Usage: Application <path to config file>")
@@ -89,6 +93,15 @@ class PrEPPipeline {
             val configFiles = seeding.configFiles.map { root.resolve(it) }
 
             seedModule.execute(seeding, config.random, listings, dataRoot, configFiles, workingRoot)
+        }
+
+        // Run the GitHub Crawler module
+        if (config.github != null) {
+            println("Crawling GitHub")
+
+            val searchTerm = config.github!!.searchTerm
+            val ghoutdir = Files.createDirectory(workingRoot.resolve("crawled"))
+            githubModule.execute(searchTerm, ghoutdir, listings)
         }
 
         // Run the normalisation module

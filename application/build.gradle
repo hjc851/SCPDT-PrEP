@@ -13,12 +13,12 @@ repositories {
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
-    compile project(':core')
+    implementation project(':core')
 
-    compile group: 'javax.enterprise', name: 'cdi-api', version: '2.0'
-    compile group: 'org.jboss.weld.se', name: 'weld-se-core', version: '3.0.6.Final'
+    implementation group: 'javax.enterprise', name: 'cdi-api', version: '2.0'
+    implementation group: 'org.jboss.weld.se', name: 'weld-se-core', version: '3.0.6.Final'
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }

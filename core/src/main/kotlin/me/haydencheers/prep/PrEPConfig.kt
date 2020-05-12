@@ -19,6 +19,12 @@ class PrEPConfig {
     var seeding: SeedConfig? = null
     var normalisation: NormalisationConfig? = null
     var detection: DetectionConfig = DetectionConfig()
+
+    var github: GitHubConfig? = null
+}
+
+class GitHubConfig {
+    lateinit var searchTerm: String
 }
 
 class SeedConfig {

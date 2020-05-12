@@ -9,6 +9,7 @@ include 'scripts'
 // Tool bindings
 sourceControl {
     gitRepository("https://github.com/hjc851/SCPDTBindings.git") {
+        producesModule("me.haydencheers.scpdt:common")
         producesModule("me.haydencheers.scpdt:jplag")
         producesModule("me.haydencheers.scpdt:naive")
         producesModule("me.haydencheers.scpdt:plaggie")

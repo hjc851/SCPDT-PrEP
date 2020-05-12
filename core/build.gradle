@@ -13,29 +13,32 @@ repositories {
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
-    compile project(':normalise')
+    implementation project(':normalise')
 
     //  CDI
-    compile group: 'javax.enterprise', name: 'cdi-api', version: '2.0'
+    implementation group: 'javax.enterprise', name: 'cdi-api', version: '2.0'
 
     // JSON Serialization
-    compile group: 'javax.json', name: 'javax.json-api', version: '1.1.4'
-    compile group: 'javax.json.bind', name: 'javax.json.bind-api', version: '1.0'
-    compile 'org.apache.johnzon:johnzon-jsonb:1.1.4'
+    implementation group: 'javax.json', name: 'javax.json-api', version: '1.1.4'
+    implementation group: 'javax.json.bind', name: 'javax.json.bind-api', version: '1.0'
+    implementation 'org.apache.johnzon:johnzon-jsonb:1.1.4'
 
     // Tool bindings
-    compile('me.haydencheers.scpdt:naive') { version { branch = 'master' } }
-    compile('me.haydencheers.scpdt:jplag') { version { branch = 'master' } }
-    compile('me.haydencheers.scpdt:plaggie') { version { branch = 'master' } }
-    compile('me.haydencheers.scpdt:sim') { version { branch = 'master' } }
-    compile('me.haydencheers.scpdt:sherlock-warwick') { version { branch = 'master' } }
-    compile('me.haydencheers.scpdt:sherlock-sydney') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:naive') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:jplag') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:plaggie') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:sim') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:sherlock-warwick') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:sherlock-sydney') { version { branch = 'master' } }
 
     // STRF
-    compile('me.haydencheers.strf:beans') { version { branch = 'master' } }
-    compile('me.haydencheers.strf:serialiser') { version { branch = 'master' } }
+    implementation('me.haydencheers.strf:beans') { version { branch = 'master' } }
+    implementation('me.haydencheers.strf:serialiser') { version { branch = 'master' } }
+
+    // GitHub
+    implementation group: 'org.kohsuke', name: 'github-api', version: '1.111'
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }

@@ -13,14 +13,14 @@ repositories {
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
     //  Java Formatting
-    compile 'com.google.googlejavaformat:google-java-format:1.7'
-    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+    implementation 'com.google.googlejavaformat:google-java-format:1.7'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.6'
 
     // Comment removal + reordering
-    compile group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.core', version: '3.+'
+    implementation group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.core', version: '3.+'
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
