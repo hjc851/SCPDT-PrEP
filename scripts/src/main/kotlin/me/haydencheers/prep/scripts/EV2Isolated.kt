@@ -17,6 +17,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.stream.IntStream
@@ -44,8 +45,10 @@ val VARIANT_LEVELS = arrayOf(
 
 val RETRY_COUNT = 5
 
-val MAX_PARALLEL = 8
+val MAX_PARALLEL = 7
 val SEM = Semaphore(MAX_PARALLEL)
+
+val TIMEOUT = 2L
 
 object EV2Isolated {
     @JvmStatic
@@ -53,15 +56,7 @@ object EV2Isolated {
         val datasetRoot = Paths.get("/media/haydencheers/Data/PrEP/datasets")
         val workingDir = Paths.get("/media/haydencheers/Data/PrEP/EV2")
 
-//        if (Files.exists(workingDir)) {
-//            Files.walk(workingDir)
-//                .sorted(Comparator.reverseOrder())
-//                .forEach(Files::delete)
-//
-//            Files.createDirectories(workingDir)
-//        }
-
-        for (datasetName in DATASET_NAMES) {
+        for (datasetName in DATASET_NAMES.shuffled()) {
             println("Dataset: $datasetName")
 
             val datasetSubmissionRoot = datasetRoot.resolve(datasetName)
@@ -70,6 +65,7 @@ object EV2Isolated {
             val submissions = Files.list(datasetSubmissionRoot)
                 .filter { Files.isDirectory(it) && !Files.isHidden(it) }
                 .use { it.toList() }
+                .shuffled()
 
             for (submission in submissions) {
                 println("\tSubmission: $submission")
@@ -77,25 +73,23 @@ object EV2Isolated {
                 for ((pname, pvalue) in VARIANT_LEVELS) {
                     println("\t\t$pname")
 
-                    IntStream.rangeClosed(1, 16)
-                        .parallel()
-                        .forEach { transformation ->
-                            val storeOut = workingDir.resolve("out/${submission.fileName.toString()}/$pname/$transformation")
-                            val storeWork = workingDir.resolve("work/${submission.fileName.toString()}/$pname/$transformation")
-                            val storeLogs = workingDir.resolve("logs/${submission.fileName.toString()}/$pname/$transformation")
+                    for (transformation in 1 .. 16) {
+                        val storeOut = workingDir.resolve("out/${datasetName}/${submission.fileName}/$pname/$transformation")
+                        val storeWork = workingDir.resolve("work/${datasetName}/${submission.fileName}/$pname/$transformation")
+                        val storeLogs = workingDir.resolve("logs/${datasetName}/${submission.fileName}/$pname/$transformation")
 
-                            if (Files.exists(storeOut) && Files.exists(storeWork) && Files.exists(storeLogs))
-                                return@forEach
+                        if (Files.exists(storeOut) && Files.exists(storeWork) && Files.exists(storeLogs))
+                            continue
 
-                            SEM.acquire()
-                            println("\t\t\t$transformation")
+                        SEM.acquire()
+                        println("\t\t\t$transformation")
 
+                        CompletableFuture.runAsync {
                             val tmp = Files.createTempDirectory("PREP-EV2-Isolated-${submission.fileName}-$pname-$transformation")
-
-                            Files.copy(Paths.get("db.blob"), tmp.resolve("db.blob"))
                             val work = Files.createDirectories(tmp.resolve("work"))
                             val out = Files.createDirectory(tmp.resolve("out"))
                             val seed = Files.createDirectory(tmp.resolve("seed"))
+                            Files.copy(Paths.get("db.blob"), tmp.resolve("db.blob"))
 
                             val srcRoot = Files.createDirectory(tmp.resolve("src"))
                             CopyUtils.copyDir(submission, srcRoot.resolve(submission.fileName))
@@ -116,7 +110,7 @@ object EV2Isolated {
                                 val success = executePrEP(configFile, tmp, outf, errf, RETRY_COUNT)
 
                                 if (!success) {
-                                    System.err.println("Failed: ${submission.fileName.toString()} ${pname} ${transformation}")
+                                    System.err.println("Failed: ${submission.fileName} ${pname} ${transformation}")
                                 } else {
                                     Files.createDirectories(storeOut)
                                     Files.createDirectories(storeWork)
@@ -124,7 +118,6 @@ object EV2Isolated {
                                     FileUtils.copyDir(out, storeOut)
                                     FileUtils.copyDir(work, storeWork)
                                 }
-
 
                                 Files.createDirectories(storeLogs)
                                 Files.copy(outf, storeLogs.resolve("stdout.txt"), StandardCopyOption.REPLACE_EXISTING)
@@ -137,9 +130,11 @@ object EV2Isolated {
                                         .forEach(Files::delete)
                                 } catch (e: Exception) {}
                             }
-
+                        }.whenComplete { void: Void?, t: Throwable? ->
+                            t?.printStackTrace()
                             SEM.release()
                         }
+                    }
                 }
             }
         }
@@ -152,7 +147,7 @@ object EV2Isolated {
             val confp = config.toAbsolutePath().toString()
             val process = Forker.exec(Application::class.java, arrayOf(confp), workingDir = workingDir, out = out, err = err)
 
-            val result = process.waitFor(2, TimeUnit.MINUTES)
+            val result = process.waitFor(TIMEOUT, TimeUnit.MINUTES)
 
             if (result) {
                 val exitCode = process.exitValue()
