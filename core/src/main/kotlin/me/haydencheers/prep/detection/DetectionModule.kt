@@ -10,6 +10,7 @@ import me.haydencheers.scpdt.util.CopyUtils
 import me.haydencheers.strf.beans.BatchEvaluationResult
 import me.haydencheers.strf.beans.FileComparisonResult
 import me.haydencheers.strf.beans.PairwiseComparisonResult
+import java.lang.Exception
 import java.nio.file.Files
 import java.time.Duration
 import java.time.Instant
@@ -150,6 +151,12 @@ open class DetectionModule {
 
                         val result = tool.evaluateSubmissions(tmp)
                         results.addAll(result)
+
+                        try {
+                            Files.walk(tmp)
+                                .sorted(Comparator.reverseOrder())
+                                .forEach(Files::delete)
+                        } catch (e: Exception) {}
                     }, executor)
                     .whenComplete { void, throwable ->
                         throwable?.printStackTrace(System.err)
