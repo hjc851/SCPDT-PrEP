@@ -21,6 +21,9 @@ dependencies {
 
     implementation('me.haydencheers.scpdt:common') { version { branch = 'master' } }
 
+    implementation('me.haydencheers.strf:beans') { version { branch = 'master' } }
+    implementation('me.haydencheers.strf:serialiser') { version { branch = 'master' } }
+
     implementation group: 'javax.enterprise', name: 'cdi-api', version: '2.0'
     implementation group: 'org.jboss.weld.se', name: 'weld-se-core', version: '3.0.6.Final'
 

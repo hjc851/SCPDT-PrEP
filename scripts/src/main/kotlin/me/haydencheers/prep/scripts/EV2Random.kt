@@ -18,18 +18,19 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
-import java.util.stream.IntStream
 import kotlin.streams.toList
 
-object EV2Isolated {
+object EV2Random {
+
+    val transformationIds = (1 .. 16).toList()
+
     @JvmStatic
     fun main(args: Array<String>) {
         val datasetRoot = Paths.get("/media/haydencheers/Data/PrEP/datasets")
-        val workingDir = Paths.get("/media/haydencheers/Data/PrEP/EV2")
+        val workingDir = Paths.get("/media/haydencheers/Data/PrEP/EV2Random")
 
-        for (datasetName in EV2Config.DATASET_NAMES.shuffled()) {
+        for (datasetName in EV2Config.DATASET_NAMES) {
             println("Dataset: $datasetName")
 
             val datasetSubmissionRoot = datasetRoot.resolve(datasetName)
@@ -38,7 +39,6 @@ object EV2Isolated {
             val submissions = Files.list(datasetSubmissionRoot)
                 .filter { Files.isDirectory(it) && !Files.isHidden(it) }
                 .use { it.toList() }
-                .shuffled()
 
             for (submission in submissions) {
                 println("\tSubmission: $submission")
@@ -46,74 +46,73 @@ object EV2Isolated {
                 for ((pname, pvalue) in EV2Config.VARIANT_LEVELS) {
                     println("\t\t$pname")
 
-                    for (transformation in 1 .. 16) {
-                        val storeOut = workingDir.resolve("out/${datasetName}/${submission.fileName}/$pname/$transformation")
-                        val storeWork = workingDir.resolve("work/${datasetName}/${submission.fileName}/$pname/$transformation")
-                        val storeLogs = workingDir.resolve("logs/${datasetName}/${submission.fileName}/$pname/$transformation")
+                    val transformationCount = EV2Config.random.nextInt(1, 17) // until is exclusive
+                    val transformations = (1 .. transformationCount).map {
+                        transformationIds.random(EV2Config.random)
+                    }.toSet()
 
-                        if (Files.exists(storeOut) && Files.exists(storeWork) && Files.exists(storeLogs))
-                            continue
+                    val storeOut = workingDir.resolve("out/${datasetName}/${submission.fileName}/$pname")
+                    val storeWork = workingDir.resolve("work/${datasetName}/${submission.fileName}/$pname")
+                    val storeLogs = workingDir.resolve("logs/${datasetName}/${submission.fileName}/$pname")
 
-                        EV2Config.SEM.acquire()
-                        println("\t\t\t$transformation")
+                    if (Files.exists(storeOut) && Files.exists(storeWork) && Files.exists(storeLogs))
+                        continue
 
-                        CompletableFuture.runAsync {
-                            val tmp = Files.createTempDirectory("PREP-EV2-Isolated-${submission.fileName}-$pname-$transformation")
-                            val work = Files.createDirectories(tmp.resolve("work"))
-                            val out = Files.createDirectory(tmp.resolve("out"))
-                            val seed = Files.createDirectory(tmp.resolve("seed"))
-                            Files.copy(Paths.get("db.blob"), tmp.resolve("db.blob"))
+                    EV2Config.SEM.acquire()
 
-                            val srcRoot = Files.createDirectory(tmp.resolve("src"))
-                            CopyUtils.copyDir(submission, srcRoot.resolve(submission.fileName))
+                    CompletableFuture.runAsync {
+                        val tmp = Files.createTempDirectory("PREP-EV2-Isolated-${submission.fileName}-$pname")
+                        val work = Files.createDirectories(tmp.resolve("work"))
+                        val out = Files.createDirectory(tmp.resolve("out"))
+                        val seed = Files.createDirectory(tmp.resolve("seed"))
+                        Files.copy(Paths.get("db.blob"), tmp.resolve("db.blob"))
 
-                            val config = makeConfig(submission.fileName.toString())
-                            val simplagConfig = makeSimplagConfig(transformation, pvalue)
+                        val srcRoot = Files.createDirectory(tmp.resolve("src"))
+                        CopyUtils.copyDir(submission, srcRoot.resolve(submission.fileName))
 
-                            val configFile = tmp.resolve("config.json")
-                            val simplagConfigFile = tmp.resolve("simplag-config.json")
+                        val config = makeConfig(submission.fileName.toString())
+                        val simplagConfig = makeSimplagConfig(transformations, pvalue)
 
-                            val outf = Files.createFile(tmp.resolve("stdout.txt"))
-                            val errf = Files.createFile(tmp.resolve("stderr.txt"))
+                        val configFile = tmp.resolve("config.json")
+                        val simplagConfigFile = tmp.resolve("simplag-config.json")
 
-                            JsonSerialiser.serialise(config, configFile)
-                            JsonSerialiser.serialise(simplagConfig, simplagConfigFile)
+                        val outf = Files.createFile(tmp.resolve("stdout.txt"))
+                        val errf = Files.createFile(tmp.resolve("stderr.txt"))
 
-                            try {
-                                val success = executePrEP(configFile, tmp, outf, errf, EV2Config.RETRY_COUNT)
+                        JsonSerialiser.serialise(config, configFile)
+                        JsonSerialiser.serialise(simplagConfig, simplagConfigFile)
 
-                                if (!success) {
-                                    System.err.println("Failed: ${submission.fileName} ${pname} ${transformation}")
-                                } else {
-                                    Files.createDirectories(storeOut)
-                                    Files.createDirectories(storeWork)
+                        try {
+                            val success = executePrEP(configFile, tmp, outf, errf, EV2Config.RETRY_COUNT)
 
-                                    FileUtils.copyDir(out, storeOut)
-                                    FileUtils.copyDir(work, storeWork)
-                                }
+                            if (!success) {
+                                System.err.println("Failed: ${submission.fileName} ${pname}")
+                            } else {
+                                Files.createDirectories(storeOut)
+                                Files.createDirectories(storeWork)
 
-                                Files.createDirectories(storeLogs)
-                                Files.copy(outf, storeLogs.resolve("stdout.txt"), StandardCopyOption.REPLACE_EXISTING)
-                                Files.copy(errf, storeLogs.resolve("stderr.txt"), StandardCopyOption.REPLACE_EXISTING)
-
-                            } finally {
-                                try {
-                                    Files.walk(tmp)
-                                        .sorted(Comparator.reverseOrder())
-                                        .forEach(Files::delete)
-                                } catch (e: Exception) {}
+                                FileUtils.copyDir(out, storeOut)
+                                FileUtils.copyDir(work, storeWork)
                             }
-                        }.whenComplete { void: Void?, t: Throwable? ->
-                            t?.printStackTrace()
-                            EV2Config.SEM.release()
+
+                            Files.createDirectories(storeLogs)
+                            Files.copy(outf, storeLogs.resolve("stdout.txt"), StandardCopyOption.REPLACE_EXISTING)
+                            Files.copy(errf, storeLogs.resolve("stderr.txt"), StandardCopyOption.REPLACE_EXISTING)
+
+                        } finally {
+                            try {
+                                Files.walk(tmp)
+                                    .sorted(Comparator.reverseOrder())
+                                    .forEach(Files::delete)
+                            } catch (e: Exception) {}
                         }
+                    }.whenComplete { void: Void?, t: Throwable? ->
+                        t?.printStackTrace()
+                        EV2Config.SEM.release()
                     }
                 }
             }
         }
-
-        EV2Config.SEM.acquire(EV2Config.MAX_PARALLEL)
-        EV2Config.SEM.release(EV2Config.MAX_PARALLEL)
     }
 
     private fun executePrEP(config: Path, workingDir: Path, out: Path, err: Path, retryCount: Int): Boolean {
@@ -179,7 +178,7 @@ object EV2Isolated {
         }
     }
 
-    private fun makeSimplagConfig(transformation: Int, chance: Double): SimPlagConfig {
+    private fun makeSimplagConfig(transformations: Set<Int>, chance: Double): SimPlagConfig {
         return SimPlagConfig().apply {
             input = ""
             injectionSources = ""
@@ -200,53 +199,53 @@ object EV2Isolated {
             mutate = MutateConfig().apply {
                 commenting = CommentingConfig().apply {
                     addChance = chance
-                    add = transformation == 1
+                    add = transformations.contains(1)
 
                     removeChance = chance
-                    remove = transformation == 2
+                    remove = transformations.contains(2)
 
                     mutateChance = chance
-                    mutate = transformation == 3
+                    mutate = transformations.contains(3)
                 }
 
                 renameIdentifiersChance = chance
-                renameIdentifiers = transformation == 4
+                renameIdentifiers = transformations.contains(4)
 
                 reorderStatementsChance = chance
-                reorderStatements = transformation == 5
+                reorderStatements = transformations.contains(5)
 
                 reorderMemberDeclarationsChance = chance
-                reorderMemberDeclarations = transformation == 6
+                reorderMemberDeclarations = transformations.contains(6)
 
                 swapOperandsChance = chance
-                swapOperands = transformation == 7
+                swapOperands = transformations.contains(7)
 
                 upcastDataTypesChance = chance
-                upcastDataTypes = transformation == 8
+                upcastDataTypes = transformations.contains(8)
 
                 switchToIfChance = chance
-                switchToIf = transformation == 9
+                switchToIf = transformations.contains(9)
 
                 forToWhileChance = chance
-                forToWhile = transformation == 10
+                forToWhile = transformations.contains(10)
 
                 expandCompoundAssignmentChance = chance
-                expandCompoundAssignment = transformation == 11
+                expandCompoundAssignment = transformations.contains(11)
 
                 expandIncDecChance = chance
-                expandIncDec = transformation == 12
+                expandIncDec = transformations.contains(12)
 
                 splitVariableDeclarationsChance = chance
-                splitVariableDeclarations = transformation == 13
+                splitVariableDeclarations = transformations.contains(13)
 
                 assignDefaultValueChance = chance
-                assignDefaultValue = transformation == 14
+                assignDefaultValue = transformations.contains(14)
 
                 splitDeclAndAssignmentChance = chance
-                splitDeclAndAssignment = transformation == 15
+                splitDeclAndAssignment = transformations.contains(15)
 
                 groupVariableDeclarationsChance = chance
-                groupVariableDeclarations = transformation == 16
+                groupVariableDeclarations = transformations.contains(16)
             }
         }
     }

@@ -18,16 +18,14 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
-import java.util.stream.IntStream
 import kotlin.streams.toList
 
-object EV2Isolated {
+object EV2All {
     @JvmStatic
     fun main(args: Array<String>) {
         val datasetRoot = Paths.get("/media/haydencheers/Data/PrEP/datasets")
-        val workingDir = Paths.get("/media/haydencheers/Data/PrEP/EV2")
+        val workingDir = Paths.get("/media/haydencheers/Data/PrEP/EV2-All")
 
         for (datasetName in EV2Config.DATASET_NAMES.shuffled()) {
             println("Dataset: $datasetName")
@@ -46,67 +44,64 @@ object EV2Isolated {
                 for ((pname, pvalue) in EV2Config.VARIANT_LEVELS) {
                     println("\t\t$pname")
 
-                    for (transformation in 1 .. 16) {
-                        val storeOut = workingDir.resolve("out/${datasetName}/${submission.fileName}/$pname/$transformation")
-                        val storeWork = workingDir.resolve("work/${datasetName}/${submission.fileName}/$pname/$transformation")
-                        val storeLogs = workingDir.resolve("logs/${datasetName}/${submission.fileName}/$pname/$transformation")
+                    val storeOut = workingDir.resolve("out/${datasetName}/${submission.fileName}/$pname")
+                    val storeWork = workingDir.resolve("work/${datasetName}/${submission.fileName}/$pname")
+                    val storeLogs = workingDir.resolve("logs/${datasetName}/${submission.fileName}/$pname")
 
-                        if (Files.exists(storeOut) && Files.exists(storeWork) && Files.exists(storeLogs))
-                            continue
+                    if (Files.exists(storeOut) && Files.exists(storeWork) && Files.exists(storeLogs))
+                        continue
 
-                        EV2Config.SEM.acquire()
-                        println("\t\t\t$transformation")
+                    EV2Config.SEM.acquire()
 
-                        CompletableFuture.runAsync {
-                            val tmp = Files.createTempDirectory("PREP-EV2-Isolated-${submission.fileName}-$pname-$transformation")
-                            val work = Files.createDirectories(tmp.resolve("work"))
-                            val out = Files.createDirectory(tmp.resolve("out"))
-                            val seed = Files.createDirectory(tmp.resolve("seed"))
-                            Files.copy(Paths.get("db.blob"), tmp.resolve("db.blob"))
+                    CompletableFuture.runAsync {
+                        val tmp = Files.createTempDirectory("PREP-EV2-Isolated-${submission.fileName}-$pname")
+                        val work = Files.createDirectories(tmp.resolve("work"))
+                        val out = Files.createDirectory(tmp.resolve("out"))
+                        val seed = Files.createDirectory(tmp.resolve("seed"))
+                        Files.copy(Paths.get("db.blob"), tmp.resolve("db.blob"))
 
-                            val srcRoot = Files.createDirectory(tmp.resolve("src"))
-                            CopyUtils.copyDir(submission, srcRoot.resolve(submission.fileName))
+                        val srcRoot = Files.createDirectory(tmp.resolve("src"))
+                        CopyUtils.copyDir(submission, srcRoot.resolve(submission.fileName))
 
-                            val config = makeConfig(submission.fileName.toString())
-                            val simplagConfig = makeSimplagConfig(transformation, pvalue)
+                        val config = makeConfig(submission.fileName.toString())
+                        val simplagConfig = makeSimplagConfig(pvalue)
 
-                            val configFile = tmp.resolve("config.json")
-                            val simplagConfigFile = tmp.resolve("simplag-config.json")
+                        val configFile = tmp.resolve("config.json")
+                        val simplagConfigFile = tmp.resolve("simplag-config.json")
 
-                            val outf = Files.createFile(tmp.resolve("stdout.txt"))
-                            val errf = Files.createFile(tmp.resolve("stderr.txt"))
+                        val outf = Files.createFile(tmp.resolve("stdout.txt"))
+                        val errf = Files.createFile(tmp.resolve("stderr.txt"))
 
-                            JsonSerialiser.serialise(config, configFile)
-                            JsonSerialiser.serialise(simplagConfig, simplagConfigFile)
+                        JsonSerialiser.serialise(config, configFile)
+                        JsonSerialiser.serialise(simplagConfig, simplagConfigFile)
 
-                            try {
-                                val success = executePrEP(configFile, tmp, outf, errf, EV2Config.RETRY_COUNT)
+                        try {
+                            val success = executePrEP(configFile, tmp, outf, errf, EV2Config.RETRY_COUNT)
 
-                                if (!success) {
-                                    System.err.println("Failed: ${submission.fileName} ${pname} ${transformation}")
-                                } else {
-                                    Files.createDirectories(storeOut)
-                                    Files.createDirectories(storeWork)
+                            if (!success) {
+                                System.err.println("Failed: ${submission.fileName} ${pname}")
+                            } else {
+                                Files.createDirectories(storeOut)
+                                Files.createDirectories(storeWork)
 
-                                    FileUtils.copyDir(out, storeOut)
-                                    FileUtils.copyDir(work, storeWork)
-                                }
-
-                                Files.createDirectories(storeLogs)
-                                Files.copy(outf, storeLogs.resolve("stdout.txt"), StandardCopyOption.REPLACE_EXISTING)
-                                Files.copy(errf, storeLogs.resolve("stderr.txt"), StandardCopyOption.REPLACE_EXISTING)
-
-                            } finally {
-                                try {
-                                    Files.walk(tmp)
-                                        .sorted(Comparator.reverseOrder())
-                                        .forEach(Files::delete)
-                                } catch (e: Exception) {}
+                                FileUtils.copyDir(out, storeOut)
+                                FileUtils.copyDir(work, storeWork)
                             }
-                        }.whenComplete { void: Void?, t: Throwable? ->
-                            t?.printStackTrace()
-                            EV2Config.SEM.release()
+
+                            Files.createDirectories(storeLogs)
+                            Files.copy(outf, storeLogs.resolve("stdout.txt"), StandardCopyOption.REPLACE_EXISTING)
+                            Files.copy(errf, storeLogs.resolve("stderr.txt"), StandardCopyOption.REPLACE_EXISTING)
+
+                        } finally {
+                            try {
+                                Files.walk(tmp)
+                                    .sorted(Comparator.reverseOrder())
+                                    .forEach(Files::delete)
+                            } catch (e: Exception) {}
                         }
+                    }.whenComplete { void: Void?, t: Throwable? ->
+                        t?.printStackTrace()
+                        EV2Config.SEM.release()
                     }
                 }
             }
@@ -179,7 +174,7 @@ object EV2Isolated {
         }
     }
 
-    private fun makeSimplagConfig(transformation: Int, chance: Double): SimPlagConfig {
+    private fun makeSimplagConfig(chance: Double): SimPlagConfig {
         return SimPlagConfig().apply {
             input = ""
             injectionSources = ""
@@ -200,53 +195,53 @@ object EV2Isolated {
             mutate = MutateConfig().apply {
                 commenting = CommentingConfig().apply {
                     addChance = chance
-                    add = transformation == 1
+                    add = true
 
                     removeChance = chance
-                    remove = transformation == 2
+                    remove = true
 
                     mutateChance = chance
-                    mutate = transformation == 3
+                    mutate = true
                 }
 
                 renameIdentifiersChance = chance
-                renameIdentifiers = transformation == 4
+                renameIdentifiers = true
 
                 reorderStatementsChance = chance
-                reorderStatements = transformation == 5
+                reorderStatements = true
 
                 reorderMemberDeclarationsChance = chance
-                reorderMemberDeclarations = transformation == 6
+                reorderMemberDeclarations = true
 
                 swapOperandsChance = chance
-                swapOperands = transformation == 7
+                swapOperands = true
 
                 upcastDataTypesChance = chance
-                upcastDataTypes = transformation == 8
+                upcastDataTypes = true
 
                 switchToIfChance = chance
-                switchToIf = transformation == 9
+                switchToIf = true
 
                 forToWhileChance = chance
-                forToWhile = transformation == 10
+                forToWhile = true
 
                 expandCompoundAssignmentChance = chance
-                expandCompoundAssignment = transformation == 11
+                expandCompoundAssignment = true
 
                 expandIncDecChance = chance
-                expandIncDec = transformation == 12
+                expandIncDec = true
 
                 splitVariableDeclarationsChance = chance
-                splitVariableDeclarations = transformation == 13
+                splitVariableDeclarations = true
 
                 assignDefaultValueChance = chance
-                assignDefaultValue = transformation == 14
+                assignDefaultValue = true
 
                 splitDeclAndAssignmentChance = chance
-                splitDeclAndAssignment = transformation == 15
+                splitDeclAndAssignment = true
 
                 groupVariableDeclarationsChance = chance
-                groupVariableDeclarations = transformation == 16
+                groupVariableDeclarations = true
             }
         }
     }
