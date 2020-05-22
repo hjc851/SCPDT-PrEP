@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm'
+    id "org.jetbrains.kotlin.plugin.noarg" version "1.3.11"
 }
 
 group 'me.haydencheers.prep'
@@ -14,6 +15,8 @@ repositories {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
+    implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
 
     implementation project(':core')
     implementation project(':normalise')
@@ -35,6 +38,10 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+noArg {
+    annotation("me.haydencheers.prep.scripts.simplag.Record")
 }
 
 //jar {

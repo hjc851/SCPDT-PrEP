@@ -1,4 +1,4 @@
-package me.haydencheers.prep.scripts
+package me.haydencheers.prep.scripts.ev2
 
 import me.haydencheers.prep.Application
 import me.haydencheers.prep.DetectionConfig
@@ -27,13 +27,12 @@ object EV2Random {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        val datasetRoot = Paths.get("/media/haydencheers/Data/PrEP/datasets")
-        val workingDir = Paths.get("/media/haydencheers/Data/PrEP/EV2Random")
+        val workingDir = Config.EV2_WORKING_ROOT.resolve("Random")
 
-        for (datasetName in EV2Config.DATASET_NAMES) {
+        for (datasetName in Config.DATASET_NAMES) {
             println("Dataset: $datasetName")
 
-            val datasetSubmissionRoot = datasetRoot.resolve(datasetName)
+            val datasetSubmissionRoot = Config.DATASET_ROOT.resolve(datasetName)
             if (!Files.exists(datasetSubmissionRoot)) throw IllegalArgumentException("dataset ${datasetName} does not exist!")
 
             val submissions = Files.list(datasetSubmissionRoot)
@@ -43,12 +42,12 @@ object EV2Random {
             for (submission in submissions) {
                 println("\tSubmission: $submission")
 
-                for ((pname, pvalue) in EV2Config.VARIANT_LEVELS) {
+                for ((pname, pvalue) in Config.VARIANT_LEVELS) {
                     println("\t\t$pname")
 
-                    val transformationCount = EV2Config.random.nextInt(1, 17) // until is exclusive
+                    val transformationCount = Config.random.nextInt(1, 17) // until is exclusive
                     val transformations = (1 .. transformationCount).map {
-                        transformationIds.random(EV2Config.random)
+                        transformationIds.random(Config.random)
                     }.toSet()
 
                     val storeOut = workingDir.resolve("out/${datasetName}/${submission.fileName}/$pname")
@@ -58,7 +57,7 @@ object EV2Random {
                     if (Files.exists(storeOut) && Files.exists(storeWork) && Files.exists(storeLogs))
                         continue
 
-                    EV2Config.SEM.acquire()
+                    Config.SEM.acquire()
 
                     CompletableFuture.runAsync {
                         val tmp = Files.createTempDirectory("PREP-EV2-Isolated-${submission.fileName}-$pname")
@@ -83,7 +82,13 @@ object EV2Random {
                         JsonSerialiser.serialise(simplagConfig, simplagConfigFile)
 
                         try {
-                            val success = executePrEP(configFile, tmp, outf, errf, EV2Config.RETRY_COUNT)
+                            val success = executePrEP(
+                                configFile,
+                                tmp,
+                                outf,
+                                errf,
+                                Config.RETRY_COUNT
+                            )
 
                             if (!success) {
                                 System.err.println("Failed: ${submission.fileName} ${pname}")
@@ -108,11 +113,14 @@ object EV2Random {
                         }
                     }.whenComplete { void: Void?, t: Throwable? ->
                         t?.printStackTrace()
-                        EV2Config.SEM.release()
+                        Config.SEM.release()
                     }
                 }
             }
         }
+
+        Config.SEM.acquire(Config.MAX_PARALLEL)
+        Config.SEM.release(Config.MAX_PARALLEL)
     }
 
     private fun executePrEP(config: Path, workingDir: Path, out: Path, err: Path, retryCount: Int): Boolean {
@@ -120,7 +128,7 @@ object EV2Random {
             val confp = config.toAbsolutePath().toString()
             val process = Forker.exec(Application::class.java, arrayOf(confp), workingDir = workingDir, out = out, err = err)
 
-            val result = process.waitFor(EV2Config.TIMEOUT, TimeUnit.MINUTES)
+            val result = process.waitFor(Config.TIMEOUT, TimeUnit.MINUTES)
 
             if (result) {
                 val exitCode = process.exitValue()
@@ -159,7 +167,7 @@ object EV2Random {
             }
 
             detection = DetectionConfig().apply {
-                maxParallelism = EV2Config.MAX_PARALLEL
+                maxParallelism = Config.MAX_PARALLEL
                 mxHeap = "2000M"
 
                 useJPlag = true
@@ -186,7 +194,7 @@ object EV2Random {
 
             randomSeed = 11121993
 
-            copies = EV2Config.VARIANT_COUNT
+            copies = Config.VARIANT_COUNT
 
             inject = InjectConfig().apply {
                 injectAssignment = false

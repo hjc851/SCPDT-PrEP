@@ -1,4 +1,4 @@
-package me.haydencheers.prep.scripts
+package me.haydencheers.prep.scripts.ev2
 
 import me.haydencheers.prep.Application
 import me.haydencheers.prep.DetectionConfig
@@ -24,13 +24,12 @@ import kotlin.streams.toList
 object EV2RandomRandom {
     @JvmStatic
     fun main(args: Array<String>) {
-        val datasetRoot = Paths.get("/media/haydencheers/Data/PrEP/datasets")
-        val workingDir = Paths.get("/media/haydencheers/Data/PrEP/EV2RandomRandom")
+        val workingDir = Config.EV2_WORKING_ROOT.resolve("RandomRandom")
 
-        for (datasetName in EV2Config.DATASET_NAMES) {
+        for (datasetName in Config.DATASET_NAMES) {
             println("Dataset: $datasetName")
 
-            val datasetSubmissionRoot = datasetRoot.resolve(datasetName)
+            val datasetSubmissionRoot = Config.DATASET_ROOT.resolve(datasetName)
             if (!Files.exists(datasetSubmissionRoot)) throw IllegalArgumentException("dataset ${datasetName} does not exist!")
 
             val submissions = Files.list(datasetSubmissionRoot)
@@ -47,10 +46,11 @@ object EV2RandomRandom {
                 if (Files.exists(storeOut) && Files.exists(storeWork) && Files.exists(storeLogs))
                     continue
 
-                EV2Config.SEM.acquire()
+                Config.SEM.acquire()
 
                 CompletableFuture.runAsync {
                     val tmp = Files.createTempDirectory("PREP-EV2-Isolated-${submission.fileName}")
+
                     val work = Files.createDirectories(tmp.resolve("work"))
                     val out = Files.createDirectory(tmp.resolve("out"))
                     val seed = Files.createDirectory(tmp.resolve("seed"))
@@ -72,7 +72,13 @@ object EV2RandomRandom {
                     JsonSerialiser.serialise(simplagConfig, simplagConfigFile)
 
                     try {
-                        val success = executePrEP(configFile, tmp, outf, errf, EV2Config.RETRY_COUNT)
+                        val success = executePrEP(
+                            configFile,
+                            tmp,
+                            outf,
+                            errf,
+                            Config.RETRY_COUNT
+                        )
 
                         if (!success) {
                             System.err.println("Failed: ${submission.fileName}")
@@ -98,7 +104,7 @@ object EV2RandomRandom {
                     }
                 }.whenComplete { void: Void?, t: Throwable? ->
                     t?.printStackTrace()
-                    EV2Config.SEM.release()
+                    Config.SEM.release()
                 }
             }
         }
@@ -107,10 +113,9 @@ object EV2RandomRandom {
     private fun executePrEP(config: Path, workingDir: Path, out: Path, err: Path, retryCount: Int): Boolean {
         for (i in 1..retryCount) {
             val confp = config.toAbsolutePath().toString()
-            val process =
-                Forker.exec(Application::class.java, arrayOf(confp), workingDir = workingDir, out = out, err = err)
+            val process = Forker.exec(Application::class.java, arrayOf(confp), workingDir = workingDir, out = out, err = err)
 
-            val result = process.waitFor(EV2Config.TIMEOUT, TimeUnit.MINUTES)
+            val result = process.waitFor(Config.TIMEOUT, TimeUnit.MINUTES)
 
             if (result) {
                 val exitCode = process.exitValue()
@@ -149,7 +154,7 @@ object EV2RandomRandom {
             }
 
             detection = DetectionConfig().apply {
-                maxParallelism = EV2Config.MAX_PARALLEL
+                maxParallelism = Config.MAX_PARALLEL
                 mxHeap = "2000M"
 
                 useJPlag = true
@@ -176,7 +181,7 @@ object EV2RandomRandom {
 
             randomSeed = 11121993
 
-            copies = EV2Config.VARIANT_COUNT
+            copies = Config.VARIANT_COUNT
 
             inject = InjectConfig().apply {
                 injectAssignment = false
@@ -188,54 +193,54 @@ object EV2RandomRandom {
 
             mutate = MutateConfig().apply {
                 commenting = CommentingConfig().apply {
-                    addChance = EV2Config.random.nextDouble(0.0, 1.0)
-                    add = EV2Config.random.nextBoolean()
+                    addChance = Config.random.nextDouble(0.0, 1.0)
+                    add = Config.random.nextBoolean()
 
-                    removeChance = EV2Config.random.nextDouble(0.0, 1.0)
-                    remove = EV2Config.random.nextBoolean()
+                    removeChance = Config.random.nextDouble(0.0, 1.0)
+                    remove = Config.random.nextBoolean()
 
-                    mutateChance = EV2Config.random.nextDouble(0.0, 1.0)
-                    mutate = EV2Config.random.nextBoolean()
+                    mutateChance = Config.random.nextDouble(0.0, 1.0)
+                    mutate = Config.random.nextBoolean()
                 }
 
-                renameIdentifiersChance = EV2Config.random.nextDouble(0.0, 1.0)
-                renameIdentifiers = EV2Config.random.nextBoolean()
+                renameIdentifiersChance = Config.random.nextDouble(0.0, 1.0)
+                renameIdentifiers = Config.random.nextBoolean()
 
-                reorderStatementsChance = EV2Config.random.nextDouble(0.0, 1.0)
-                reorderStatements = EV2Config.random.nextBoolean()
+                reorderStatementsChance = Config.random.nextDouble(0.0, 1.0)
+                reorderStatements = Config.random.nextBoolean()
 
-                reorderMemberDeclarationsChance = EV2Config.random.nextDouble(0.0, 1.0)
-                reorderMemberDeclarations = EV2Config.random.nextBoolean()
+                reorderMemberDeclarationsChance = Config.random.nextDouble(0.0, 1.0)
+                reorderMemberDeclarations = Config.random.nextBoolean()
 
-                swapOperandsChance = EV2Config.random.nextDouble(0.0, 1.0)
-                swapOperands = EV2Config.random.nextBoolean()
+                swapOperandsChance = Config.random.nextDouble(0.0, 1.0)
+                swapOperands = Config.random.nextBoolean()
 
-                upcastDataTypesChance = EV2Config.random.nextDouble(0.0, 1.0)
-                upcastDataTypes = EV2Config.random.nextBoolean()
+                upcastDataTypesChance = Config.random.nextDouble(0.0, 1.0)
+                upcastDataTypes = Config.random.nextBoolean()
 
-                switchToIfChance = EV2Config.random.nextDouble(0.0, 1.0)
-                switchToIf = EV2Config.random.nextBoolean()
+                switchToIfChance = Config.random.nextDouble(0.0, 1.0)
+                switchToIf = Config.random.nextBoolean()
 
-                forToWhileChance = EV2Config.random.nextDouble(0.0, 1.0)
-                forToWhile = EV2Config.random.nextBoolean()
+                forToWhileChance = Config.random.nextDouble(0.0, 1.0)
+                forToWhile = Config.random.nextBoolean()
 
-                expandCompoundAssignmentChance = EV2Config.random.nextDouble(0.0, 1.0)
-                expandCompoundAssignment = EV2Config.random.nextBoolean()
+                expandCompoundAssignmentChance = Config.random.nextDouble(0.0, 1.0)
+                expandCompoundAssignment = Config.random.nextBoolean()
 
-                expandIncDecChance = EV2Config.random.nextDouble(0.0, 1.0)
-                expandIncDec = EV2Config.random.nextBoolean()
+                expandIncDecChance = Config.random.nextDouble(0.0, 1.0)
+                expandIncDec = Config.random.nextBoolean()
 
-                splitVariableDeclarationsChance = EV2Config.random.nextDouble(0.0, 1.0)
-                splitVariableDeclarations = EV2Config.random.nextBoolean()
+                splitVariableDeclarationsChance = Config.random.nextDouble(0.0, 1.0)
+                splitVariableDeclarations = Config.random.nextBoolean()
 
-                assignDefaultValueChance = EV2Config.random.nextDouble(0.0, 1.0)
-                assignDefaultValue = EV2Config.random.nextBoolean()
+                assignDefaultValueChance = Config.random.nextDouble(0.0, 1.0)
+                assignDefaultValue = Config.random.nextBoolean()
 
-                splitDeclAndAssignmentChance = EV2Config.random.nextDouble(0.0, 1.0)
-                splitDeclAndAssignment = EV2Config.random.nextBoolean()
+                splitDeclAndAssignmentChance = Config.random.nextDouble(0.0, 1.0)
+                splitDeclAndAssignment = Config.random.nextBoolean()
 
-                groupVariableDeclarationsChance = EV2Config.random.nextDouble(0.0, 1.0)
-                groupVariableDeclarations = EV2Config.random.nextBoolean()
+                groupVariableDeclarationsChance = Config.random.nextDouble(0.0, 1.0)
+                groupVariableDeclarations = Config.random.nextBoolean()
             }
         }
     }

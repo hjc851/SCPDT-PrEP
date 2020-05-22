@@ -50,6 +50,7 @@ class SimPlagBinding: Closeable {
             // Execute tool
             val proc = ProcessBuilder()
                 .command(java, "-jar", simplag, cfgPath.toAbsolutePath().toString())
+                .inheritIO()
                 .start()
 
             val result = proc.waitFor()
