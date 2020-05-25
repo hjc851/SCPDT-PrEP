@@ -18,6 +18,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.util.concurrent.CompletableFuture
+import kotlin.math.roundToInt
 import kotlin.streams.toList
 
 object EV3Isolated {
@@ -40,7 +41,7 @@ object EV3Isolated {
             }
         }
 
-        for (datasetName in Config.DATASET_NAMES) {
+        for (datasetName in Config.DATASET_NAMES.shuffled()) {
             println("Dataset: $datasetName")
 
             val datasetSubmissionRoot = Config.DATASET_ROOT.resolve(datasetName)
@@ -49,10 +50,21 @@ object EV3Isolated {
             val submissions = Files.list(datasetSubmissionRoot)
                 .filter { Files.isDirectory(it) && !Files.isHidden(it) }
                 .use { it.toList() }
+                .filter { !it.fileName.toString().contains("c3279545") }
                 .shuffled()
 
             for (submission in submissions) {
                 println("\tSubmission: $submission")
+
+                val fcount = Files.walk(submission)
+                    .filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".java") }
+                    .count()
+                    .toInt()
+
+                if (fcount == 0) {
+                    println("\t\tSKIPPING: 0 files")
+                    continue
+                }
 
                 for ((pname, pvalue) in Config.VARIANT_LEVELS) {
                     println("\t\t$pname")
@@ -80,7 +92,7 @@ object EV3Isolated {
                             CopyUtils.copyDir(submission, srcRoot.resolve(submission.fileName))
 
                             val config = makeConfig(submission.fileName.toString())
-                            val simplagConfig = makeSimplagConfig(injection, pvalue)
+                            val simplagConfig = makeSimplagConfig(injection, pvalue, fcount)
 
                             val configFile = tmp.resolve("config.json")
                             val simplagConfigFile = tmp.resolve("simplag-config.json")
@@ -172,7 +184,7 @@ object EV3Isolated {
         }
     }
 
-    private fun makeSimplagConfig(injection: Int, chance: Double): SimPlagConfig {
+    private fun makeSimplagConfig(injection: Int, chance: Double, fileCount: Int): SimPlagConfig {
         return SimPlagConfig().apply {
             input = ""
             injectionSources = ""
@@ -186,19 +198,20 @@ object EV3Isolated {
                 injectAssignment = false    // no point in doing this
 
                 injectFile = injection == 1
-                injectFileChance = chance
+                injectFileChance = chance               // chance to inject file
+                injectFileMaxCount = fileCount          // max number of files
 
                 injectClass = injection == 2
-                injectClassChance = chance
-                injectClassMaxCount = 2
+                injectClassChance = chance      // chance that any file can have a class injected
+                injectClassMaxCount = 2         // max number of classes to inject for any file
 
                 injectMethod = injection == 3
-                injectMethodChance = chance
-                injectMethodMaxCount = 4
+                injectMethodChance = chance     // chance that any class will be selected to inject method into
+                injectMethodMaxCount = 8        // max number of methods to inject into any class
 
                 injectBlock = injection == 4
-                injectBlockChance = chance
-                injectBlockMaxStatements = 10
+                injectBlockChance = chance                              // chance any method can have statement injected into
+                injectBlockMaxStatements = (100 * chance).roundToInt()  // max number of statements
             }
 
             mutate = MutateConfig().apply {

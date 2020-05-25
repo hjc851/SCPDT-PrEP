@@ -4,6 +4,7 @@ import me.haydencheers.prep.scripts.ev2.Config
 import me.haydencheers.prep.scripts.simplag.Analytics
 import me.haydencheers.prep.util.JsonSerialiser
 import java.nio.file.Paths
+import javax.json.JsonObject
 
 object MutationAnalysis {
     @JvmStatic
@@ -22,9 +23,14 @@ object MutationAnalysis {
 //            .resolve("generated-0")
 //            .resolve("analytics.json.zip")
 
-        val root = Paths.get("/media/haydencheers/Data/SimPlag/out/analytics.json.zip")
+        val root = Paths.get("/media/haydencheers/Data/PrEP/EV3/Isolated/work/SENG1110_A2_2017/c3149323_attempt_2017-05-31-17-48-40/p5/3/generated-0/analytics.json.zip")
 
-        val analytics = JsonSerialiser.deserialiseCompressed(root, Analytics::class)
+        val analytics = JsonSerialiser.deserialiseCompressed(root, JsonObject::class)
+
+        analytics.filter { it.value.asJsonArray().isNotEmpty() }
+            .forEach {
+                println("${it.key} - ${it.value.asJsonArray().size}")
+            }
 
         Unit
     }

@@ -26,6 +26,7 @@ class InjectConfig {
 
     var injectFile: Boolean = true
     var injectFileChance: Double = 1.0
+    var injectFileMaxCount: Int = 1
 
     var injectClass: Boolean = true
     var injectClassChance: Double = 1.0
