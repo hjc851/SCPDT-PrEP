@@ -10,7 +10,7 @@ import kotlin.reflect.KClass
 
 object JsonSerialiser {
     private val jsonb = JsonbBuilder.create()
-    private val ENTRY_NAME = "bean.data"
+    private val ENTRY_NAME = "bean.txt"
 
     fun serialise(obj: Any, path: Path) {
         Files.newBufferedWriter(path).use { fout ->

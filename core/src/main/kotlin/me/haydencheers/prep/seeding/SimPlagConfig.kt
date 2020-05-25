@@ -25,17 +25,19 @@ class InjectConfig {
     var injectAssignmentCount: Int = 5
 
     var injectFile: Boolean = true
-    var injectFileChance: Double = 0.1
+    var injectFileChance: Double = 1.0
 
     var injectClass: Boolean = true
-    var injectClassChance: Double = 0.1
+    var injectClassChance: Double = 1.0
+    var injectClassMaxCount: Int = 1
 
     var injectMethod: Boolean = true
-    var injectMethodChance: Double = 0.1
+    var injectMethodChance: Double = 1.0
+    var injectMethodMaxCount = 2
 
     var injectBlock: Boolean = true
-    var injectBlockChance: Double = 0.1
-    var injectBlockMaxStatements: Int = 5
+    var injectBlockChance: Double = 1.0
+    var injectBlockMaxStatements: Int = 10
 }
 
 class MutateConfig {

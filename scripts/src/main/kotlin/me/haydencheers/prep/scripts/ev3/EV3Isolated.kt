@@ -40,9 +40,6 @@ object EV3Isolated {
             }
         }
 
-//        TODO("Copy all submissions to a tmp directory to use as seeding ...")
-//        TODO("Then make a symlink in each working dir to use as a thingy")
-
         for (datasetName in Config.DATASET_NAMES) {
             println("Dataset: $datasetName")
 
@@ -52,6 +49,7 @@ object EV3Isolated {
             val submissions = Files.list(datasetSubmissionRoot)
                 .filter { Files.isDirectory(it) && !Files.isHidden(it) }
                 .use { it.toList() }
+                .shuffled()
 
             for (submission in submissions) {
                 println("\tSubmission: $submission")
@@ -75,8 +73,6 @@ object EV3Isolated {
                             val work = Files.createDirectories(tmp.resolve("work"))
                             val out = Files.createDirectory(tmp.resolve("out"))
                             val seed = FileUtils.copyDir(globalSeed, tmp.resolve("seed"))
-
-//                            val seed = Files.createSymbolicLink(tmp.resolve("seed"), globalSeed)
 
                             Files.copy(Paths.get("db.blob"), tmp.resolve("db.blob"))
 
@@ -194,13 +190,15 @@ object EV3Isolated {
 
                 injectClass = injection == 2
                 injectClassChance = chance
+                injectClassMaxCount = 2
 
                 injectMethod = injection == 3
                 injectMethodChance = chance
+                injectMethodMaxCount = 4
 
                 injectBlock = injection == 4
                 injectBlockChance = chance
-                injectBlockMaxStatements = 100
+                injectBlockMaxStatements = 10
             }
 
             mutate = MutateConfig().apply {

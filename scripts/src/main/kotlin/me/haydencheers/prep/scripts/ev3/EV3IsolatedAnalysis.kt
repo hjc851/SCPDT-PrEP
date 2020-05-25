@@ -64,6 +64,7 @@ object EV3IsolatedAnalysis {
                                 val scores = strf.comparisons.groupBy { setOf(it.lhs, it.rhs) }
                                     .map { it.value.maxBy { it.similarity }!! }
 
+
                                 for (score in scores) {
                                     accumulator = ((accumulator*counter) + score.similarity) / ++counter
                                     min = min(min, score.similarity)
