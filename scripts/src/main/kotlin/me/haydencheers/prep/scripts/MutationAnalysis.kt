@@ -23,7 +23,7 @@ object MutationAnalysis {
 //            .resolve("generated-0")
 //            .resolve("analytics.json.zip")
 
-        val root = Paths.get("/media/haydencheers/Data/PrEP/EV3/Isolated/work/SENG1110_A2_2017/c3149323_attempt_2017-05-31-17-48-40/p5/3/generated-0/analytics.json.zip")
+        val root = Paths.get("/media/haydencheers/Data/PrEP/EV3/Isolated/work/SENG1110_A2_2017/c3137586_attempt_2017-05-28-15-28-54/p4/4/generated-0/analytics.json.zip")
 
         val analytics = JsonSerialiser.deserialiseCompressed(root, JsonObject::class)
 

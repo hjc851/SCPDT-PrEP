@@ -5,7 +5,6 @@ import me.haydencheers.prep.PrEPConfig
 import me.haydencheers.prep.SeedConfig
 import me.haydencheers.prep.scripts.PrEPExec
 import me.haydencheers.prep.scripts.ev2.Config
-import me.haydencheers.prep.scripts.ev2.EV2Isolated
 import me.haydencheers.prep.seeding.CommentingConfig
 import me.haydencheers.prep.seeding.InjectConfig
 import me.haydencheers.prep.seeding.MutateConfig
@@ -21,10 +20,10 @@ import java.util.concurrent.CompletableFuture
 import kotlin.math.roundToInt
 import kotlin.streams.toList
 
-object EV3Isolated {
+object EV3Collaboration {
     @JvmStatic
     fun main(args: Array<String>) {
-        val workingDir = Config.EV3_WORKING_ROOT.resolve("Isolated")
+        val workingDir = Config.EV3_WORKING_ROOT.resolve("Collaboration")
 
         val globalSeed = Files.createTempDirectory("PrEP-EV3-Seed")
 
@@ -69,68 +68,65 @@ object EV3Isolated {
                 for ((pname, pvalue) in Config.VARIANT_LEVELS) {
                     println("\t\t$pname")
 
-                    for (injection in 1..4) {
-                        val storeOut = workingDir.resolve("out/${datasetName}/${submission.fileName}/$pname/$injection")
-                        val storeWork = workingDir.resolve("work/${datasetName}/${submission.fileName}/$pname/$injection")
-                        val storeLogs = workingDir.resolve("logs/${datasetName}/${submission.fileName}/$pname/$injection")
+                    val storeOut = workingDir.resolve("out/${datasetName}/${submission.fileName}/$pname")
+                    val storeWork = workingDir.resolve("work/${datasetName}/${submission.fileName}/$pname")
+                    val storeLogs = workingDir.resolve("logs/${datasetName}/${submission.fileName}/$pname")
 
-                        if (Files.exists(storeOut) && Files.exists(storeWork) && Files.exists(storeLogs)) continue
+                    if (Files.exists(storeOut) && Files.exists(storeWork) && Files.exists(storeLogs)) continue
 
-                        Config.SEM.acquire()
-                        println("\t\t\t$injection")
+                    Config.SEM.acquire()
 
-                        CompletableFuture.runAsync {
-                            val tmp = Files.createTempDirectory("PREP-EV3-Isolated-${submission.fileName}-$pname-$injection")
+                    CompletableFuture.runAsync {
+                        val tmp = Files.createTempDirectory("PREP-EV3-Collaboration-${submission.fileName}-$pname")
 
-                            val work = Files.createDirectories(tmp.resolve("work"))
-                            val out = Files.createDirectory(tmp.resolve("out"))
-                            val seed = FileUtils.copyDir(globalSeed, tmp.resolve("seed"))
+                        val work = Files.createDirectories(tmp.resolve("work"))
+                        val out = Files.createDirectory(tmp.resolve("out"))
+                        val seed = FileUtils.copyDir(globalSeed, tmp.resolve("seed"))
 
-                            Files.copy(Paths.get("db.blob"), tmp.resolve("db.blob"))
+                        Files.copy(Paths.get("db.blob"), tmp.resolve("db.blob"))
 
-                            val srcRoot = Files.createDirectory(tmp.resolve("src"))
-                            CopyUtils.copyDir(submission, srcRoot.resolve(submission.fileName))
+                        val srcRoot = Files.createDirectory(tmp.resolve("src"))
+                        CopyUtils.copyDir(submission, srcRoot.resolve(submission.fileName))
 
-                            val config = makeConfig(submission.fileName.toString())
-                            val simplagConfig = makeSimplagConfig(injection, pvalue, fcount)
+                        val config = makeConfig(submission.fileName.toString())
+                        val simplagConfig = makeSimplagConfig(pvalue, fcount)
 
-                            val configFile = tmp.resolve("config.json")
-                            val simplagConfigFile = tmp.resolve("simplag-config.json")
+                        val configFile = tmp.resolve("config.json")
+                        val simplagConfigFile = tmp.resolve("simplag-config.json")
 
-                            val outf = Files.createFile(tmp.resolve("stdout.txt"))
-                            val errf = Files.createFile(tmp.resolve("stderr.txt"))
+                        val outf = Files.createFile(tmp.resolve("stdout.txt"))
+                        val errf = Files.createFile(tmp.resolve("stderr.txt"))
 
-                            JsonSerialiser.serialise(config, configFile)
-                            JsonSerialiser.serialise(simplagConfig, simplagConfigFile)
+                        JsonSerialiser.serialise(config, configFile)
+                        JsonSerialiser.serialise(simplagConfig, simplagConfigFile)
 
-                            try {
-                                val success = PrEPExec.execute(configFile, tmp, outf, errf, Config.RETRY_COUNT)
+                        try {
+                            val success = PrEPExec.execute(configFile, tmp, outf, errf, Config.RETRY_COUNT)
 
-                                if (!success) {
-                                    System.err.println("Failed: ${submission.fileName} ${pname} ${injection}")
-                                } else {
-                                    Files.createDirectories(storeOut)
-                                    Files.createDirectories(storeWork)
+                            if (!success) {
+                                System.err.println("Failed: ${submission.fileName} ${pname}")
+                            } else {
+                                Files.createDirectories(storeOut)
+                                Files.createDirectories(storeWork)
 
-                                    FileUtils.copyDir(out, storeOut)
-                                    FileUtils.copyDir(work, storeWork)
-                                }
-
-                                Files.createDirectories(storeLogs)
-                                Files.copy(outf, storeLogs.resolve("stdout.txt"), StandardCopyOption.REPLACE_EXISTING)
-                                Files.copy(errf, storeLogs.resolve("stderr.txt"), StandardCopyOption.REPLACE_EXISTING)
-
-                            } finally {
-                                try {
-                                    Files.walk(tmp)
-                                        .sorted(Comparator.reverseOrder())
-                                        .forEach(Files::delete)
-                                } catch (e: Exception) {}
+                                FileUtils.copyDir(out, storeOut)
+                                FileUtils.copyDir(work, storeWork)
                             }
-                        }.whenComplete { void, t ->
-                            t?.printStackTrace()
-                            Config.SEM.release()
+
+                            Files.createDirectories(storeLogs)
+                            Files.copy(outf, storeLogs.resolve("stdout.txt"), StandardCopyOption.REPLACE_EXISTING)
+                            Files.copy(errf, storeLogs.resolve("stderr.txt"), StandardCopyOption.REPLACE_EXISTING)
+
+                        } finally {
+                            try {
+                                Files.walk(tmp)
+                                    .sorted(Comparator.reverseOrder())
+                                    .forEach(Files::delete)
+                            } catch (e: Exception) {}
                         }
+                    }.whenComplete { void, t ->
+                        t?.printStackTrace()
+                        Config.SEM.release()
                     }
                 }
             }
@@ -150,7 +146,7 @@ object EV3Isolated {
             outputRoot = "out"
             workingRoot = "work"
 
-            submissionsArePlaintiff = true
+            submissionsArePlaintiff = false
             executeFilewise = false
 
             randomSeed = 11121993
@@ -184,7 +180,7 @@ object EV3Isolated {
         }
     }
 
-    private fun makeSimplagConfig(injection: Int, chance: Double, fileCount: Int): SimPlagConfig {
+    private fun makeSimplagConfig(chance: Double, fileCount: Int): SimPlagConfig {
         return SimPlagConfig().apply {
             input = ""
             injectionSources = ""
@@ -197,19 +193,19 @@ object EV3Isolated {
             inject = InjectConfig().apply {
                 injectAssignment = false    // no point in doing this
 
-                injectFile = injection == 1
+                injectFile = true
                 injectFileChance = chance               // chance to inject file
                 injectFileMaxCount = fileCount          // max number of files
 
-                injectClass = injection == 2
+                injectClass = true
                 injectClassChance = chance      // chance that any file can have a class injected
                 injectClassMaxCount = 2         // max number of classes to inject for any file
 
-                injectMethod = injection == 3
+                injectMethod = true
                 injectMethodChance = chance     // chance that any class will be selected to inject method into
                 injectMethodMaxCount = 8        // max number of methods to inject into any class
 
-                injectBlock = injection == 4
+                injectBlock = true
                 injectBlockChance = chance                              // chance any method can have statement injected into
                 injectBlockMaxStatements = (200 * chance).roundToInt()  // max number of statements
             }
