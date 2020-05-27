@@ -1,5 +1,6 @@
 package me.haydencheers.prep.scripts.ev2
 
+import me.haydencheers.prep.scripts.Config
 import me.haydencheers.prep.util.JsonSerialiser
 import me.haydencheers.strf.beans.BatchEvaluationResult
 import me.haydencheers.strf.serialisation.STRFSerialiser

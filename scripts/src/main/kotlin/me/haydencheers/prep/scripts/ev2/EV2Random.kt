@@ -5,6 +5,7 @@ import me.haydencheers.prep.DetectionConfig
 import me.haydencheers.prep.PrEPConfig
 import me.haydencheers.prep.SeedConfig
 import me.haydencheers.prep.normalise.Forker
+import me.haydencheers.prep.scripts.Config
 import me.haydencheers.prep.seeding.CommentingConfig
 import me.haydencheers.prep.seeding.InjectConfig
 import me.haydencheers.prep.seeding.MutateConfig

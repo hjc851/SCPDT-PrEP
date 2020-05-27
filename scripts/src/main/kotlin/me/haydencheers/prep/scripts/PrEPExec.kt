@@ -2,7 +2,6 @@ package me.haydencheers.prep.scripts
 
 import me.haydencheers.prep.Application
 import me.haydencheers.prep.normalise.Forker
-import me.haydencheers.prep.scripts.ev2.Config
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 

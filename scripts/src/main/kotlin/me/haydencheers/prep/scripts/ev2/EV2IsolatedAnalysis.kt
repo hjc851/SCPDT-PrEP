@@ -1,5 +1,6 @@
 package me.haydencheers.prep.scripts.ev2
 
+import me.haydencheers.prep.scripts.Config
 import me.haydencheers.strf.beans.BatchEvaluationResult
 import me.haydencheers.strf.serialisation.STRFSerialiser
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation

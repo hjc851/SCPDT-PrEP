@@ -1,4 +1,4 @@
-package me.haydencheers.prep.scripts.ev2
+package me.haydencheers.prep.scripts
 
 import java.nio.file.Paths
 import java.util.concurrent.Semaphore

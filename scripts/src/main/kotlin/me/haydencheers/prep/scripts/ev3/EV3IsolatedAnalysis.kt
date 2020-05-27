@@ -1,6 +1,6 @@
 package me.haydencheers.prep.scripts.ev3
 
-import me.haydencheers.prep.scripts.ev2.Config
+import me.haydencheers.prep.scripts.Config
 import me.haydencheers.prep.scripts.ev2.format
 import me.haydencheers.strf.beans.BatchEvaluationResult
 import me.haydencheers.strf.serialisation.STRFSerialiser
@@ -89,7 +89,6 @@ object EV3IsolatedAnalysis {
 //                    println("\\addplot[mark=-,black] coordinates { ($i,${String.format("%2.2f", max)})($i,${String.format("%2.2f", min)}) };")
 //                    println("\\addplot[mark=*,red] coordinates { ($i,${String.format("%2.2f", min(avg+stddev, 100.0))}) };")
 //                    println("\\addplot[mark=*,red] coordinates { ($i,${String.format("%2.2f", max(avg-stddev, 0.0))}) };")
-
 
                     if (pcounter == 1) {
                         println("% ${tool} + T${transformation}")

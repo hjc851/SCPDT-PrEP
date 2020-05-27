@@ -4,8 +4,7 @@ import me.haydencheers.prep.DetectionConfig
 import me.haydencheers.prep.PrEPConfig
 import me.haydencheers.prep.SeedConfig
 import me.haydencheers.prep.scripts.PrEPExec
-import me.haydencheers.prep.scripts.ev2.Config
-import me.haydencheers.prep.scripts.ev2.EV2Isolated
+import me.haydencheers.prep.scripts.Config
 import me.haydencheers.prep.seeding.CommentingConfig
 import me.haydencheers.prep.seeding.InjectConfig
 import me.haydencheers.prep.seeding.MutateConfig
@@ -203,15 +202,15 @@ object EV3Isolated {
 
                 injectClass = injection == 2
                 injectClassChance = chance      // chance that any file can have a class injected
-                injectClassMaxCount = 2         // max number of classes to inject for any file
+                injectClassMaxCount = 1         // max number of classes to inject for any file
 
                 injectMethod = injection == 3
                 injectMethodChance = chance     // chance that any class will be selected to inject method into
-                injectMethodMaxCount = 8        // max number of methods to inject into any class
+                injectMethodMaxCount = 5        // max number of methods to inject into any class
 
                 injectBlock = injection == 4
                 injectBlockChance = chance                              // chance any method can have statement injected into
-                injectBlockMaxStatements = (200 * chance).roundToInt()  // max number of statements
+                injectBlockMaxStatements = 10  // max number of statements
             }
 
             mutate = MutateConfig().apply {
