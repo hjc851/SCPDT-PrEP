@@ -23,6 +23,12 @@ dependencies {
     implementation project(':application')
 
     implementation('me.haydencheers.scpdt:common') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:naive') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:jplag') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:plaggie') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:sim') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:sherlock-warwick') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:sherlock-sydney') { version { branch = 'master' } }
 
     implementation('me.haydencheers.strf:beans') { version { branch = 'master' } }
     implementation('me.haydencheers.strf:serialiser') { version { branch = 'master' } }

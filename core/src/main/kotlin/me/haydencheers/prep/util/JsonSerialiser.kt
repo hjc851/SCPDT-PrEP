@@ -1,5 +1,6 @@
 package me.haydencheers.prep.util
 
+import java.io.OutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipEntry
@@ -11,6 +12,10 @@ import kotlin.reflect.KClass
 object JsonSerialiser {
     private val jsonb = JsonbBuilder.create()
     private val ENTRY_NAME = "bean.txt"
+
+    fun serialise(obj: Any, out: OutputStream) {
+        jsonb.toJson(obj, out)
+    }
 
     fun serialise(obj: Any, path: Path) {
         Files.newBufferedWriter(path).use { fout ->

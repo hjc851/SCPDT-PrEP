@@ -188,7 +188,7 @@ object EV3Collaboration {
 
             randomSeed = 11121993
 
-            copies = Config.VARIANT_COUNT
+            copies = 2
 
             inject = InjectConfig().apply {
                 injectAssignment = false    // no point in doing this

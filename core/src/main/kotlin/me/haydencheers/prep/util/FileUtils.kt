@@ -19,6 +19,17 @@ object FileUtils {
             }
     }
 
+    fun copyDirOnlyJava(from: Path, to: Path) {
+        if (!Files.isDirectory(from)) throw IllegalArgumentException("File $from does not exist")
+
+        Files.walk(from)
+            .filter { !Files.isHidden(it) && !it.fileName.toString().startsWith(".") }
+            .filter { Files.isDirectory(it) || it.fileName.toString().endsWith(".java") }
+            .forEachOrdered { file ->
+                Files.copy(file, to.resolve(from.relativize(file).toString()), StandardCopyOption.REPLACE_EXISTING)
+            }
+    }
+
     fun listFiles(path: Path, extension: String): List<Path> {
         return Files.walk(path)
             .filter { Files.isRegularFile(it) && !Files.isHidden(it) && !it.fileName.toString().startsWith(".") }
