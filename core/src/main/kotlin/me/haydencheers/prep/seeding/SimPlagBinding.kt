@@ -83,6 +83,7 @@ class SimPlagBinding: Closeable {
 
     fun thaw(path: Path) {
         this.thawRoot = path
+        if (!Files.exists(path)) Files.createDirectories(path)
 
         val rootcp = this.javaClass.getResource(rootFolderName).path.removeSuffix("!${rootFolderName}").removePrefix("file:")
         val rootcppath = Paths.get(rootcp)

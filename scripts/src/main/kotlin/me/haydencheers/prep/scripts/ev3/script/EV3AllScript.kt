@@ -31,14 +31,14 @@ object EV3AllScript {
 
         tools.add(JPlagSCPDT())
         tools.add(PlaggieSCPDT())
-        tools.add(SimWineSCPDTool())
+        //tools.add(SimWineSCPDTool())
         tools.add(SherlockWarwickSCPDT())
         tools.add(SherlockSydneySCPDT())
         tools.add(NaiveStringEditDistanceSCPDT())
         tools.add(NaiveStringTilingSCPDT())
         tools.add(NaiveTokenEditDistanceSCPDT())
         tools.add(NaiveTokenTilingSCPDT())
-        tools.add(NaiveTreeEditDistanceSCPDT())
+        //tools.add(NaiveTreeEditDistanceSCPDT())
         tools.add(NaivePDGEditDistanceSCPDT())
 
         return tools

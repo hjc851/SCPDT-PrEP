@@ -1,0 +1,51 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+group 'me.haydencheers.prep'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
+    implementation project(':core')
+    implementation project(':normalise')
+    implementation project(':application')
+    implementation project(':scripts')
+
+    implementation('me.haydencheers.scpdt:common') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:naive') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:jplag') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:plaggie') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:sim') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:sherlock-warwick') { version { branch = 'master' } }
+    implementation('me.haydencheers.scpdt:sherlock-sydney') { version { branch = 'master' } }
+
+    // DBSCAN
+    implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
+
+    // STRF
+    implementation('me.haydencheers.strf:beans') { version { branch = 'master' } }
+    implementation('me.haydencheers.strf:serialiser') { version { branch = 'master' } }
+
+    // JSON Serialization
+    implementation group: 'javax.json', name: 'javax.json-api', version: '1.1.4'
+    implementation group: 'javax.json.bind', name: 'javax.json.bind-api', version: '1.0'
+    implementation 'org.apache.johnzon:johnzon-jsonb:1.1.4'
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}

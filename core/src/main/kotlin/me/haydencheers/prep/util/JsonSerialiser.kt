@@ -11,7 +11,7 @@ import kotlin.reflect.KClass
 
 object JsonSerialiser {
     private val jsonb = JsonbBuilder.create()
-    private val ENTRY_NAME = "bean.txt"
+    private val ENTRY_NAME = "bean.data"
 
     fun serialise(obj: Any, out: OutputStream) {
         jsonb.toJson(obj, out)

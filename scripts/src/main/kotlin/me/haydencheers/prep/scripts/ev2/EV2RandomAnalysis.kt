@@ -29,7 +29,7 @@ object EV2RandomAnalysis {
     fun main(args: Array<String>) {
         val tex = mutableMapOf<String, String>()
 
-        val workingDir = Config.EV2_WORKING_ROOT.resolve("Random")
+        val workingDir = Config.EV2_WORKING_ROOT.resolve("All")
         val variantRoot = workingDir.resolve("work")
         val resultsDir = workingDir.resolve("out")
 
@@ -88,9 +88,6 @@ object EV2RandomAnalysis {
                                 .filter { it.value.size >= 2 }
                                 .map { it.value.maxBy { it.similarity }!! }
 
-                            if (tool == "JPlag" && submission.fileName.toString() == "c3220826_attempt_2018-06-10-22-54-36" && pname == "p3")
-                                Unit
-
                             for (score in scores) {
 
                                 if (score.similarity == 0.0)
@@ -128,34 +125,34 @@ object EV2RandomAnalysis {
             println()
         }
 
-        tex.toList()
-            .groupBy { it.first.split("%%")[1] }    // Group by pname
-            .forEach {
-                println(it.key)
+//        tex.toList()
+//            .groupBy { it.first.split("%%")[1] }    // Group by pname
+//            .forEach {
+//                println(it.key)
+//
+//                it.value.forEach {
+//                    println(it.second)
+//                }
+//            }
 
-                it.value.forEach {
-                    println(it.second)
-                }
-            }
-
-        val groupedByTool = appliedTransformationsScores
-            .groupBy { it.tool }
-            .toList()
-
-        val sortedDescending = appliedTransformationsScores.sortedByDescending { it.score }
-
-        println()
-        println("Top 5")
-        groupedByTool.forEach {
-            println(it.first)
-            val descScore = it.second.sortedBy { it.score }
-                .filter { it.transformations.size > 1 && it.transformations.size < 16 }
-                .take(20)
-
-            descScore.forEach {
-                println("\t" + it.score.format("2.2f") + "\t" + it.transformations.joinToString(", "))
-            }
-        }
+//        val groupedByTool = appliedTransformationsScores
+//            .groupBy { it.tool }
+//            .toList()
+//
+//        val sortedDescending = appliedTransformationsScores.sortedByDescending { it.score }
+//
+//        println()
+//        println("Top 5")
+//        groupedByTool.forEach {
+//            println(it.first)
+//            val descScore = it.second.sortedBy { it.score }
+//                .filter { it.transformations.size > 1 && it.transformations.size < 16 }
+//                .take(20)
+//
+//            descScore.forEach {
+//                println("\t" + it.score.format("2.2f") + "\t" + it.transformations.joinToString(", "))
+//            }
+//        }
 
 //        println("Bottom 5")
 //        groupedByTool.forEach {

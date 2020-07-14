@@ -10,8 +10,8 @@ object Config {
     val EV3_WORKING_ROOT = Paths.get("/media/haydencheers/Data/PrEP/EV3")
 
     val DATASET_NAMES = listOf(
-        "SENG1110_A1_2017",
-        "SENG1110_A2_2017",
+        //"SENG1110_A1_2017",
+        //"SENG1110_A2_2017",
         "SENG2050_A1_2019",
         "SENG2050_A2_2019",
         "SENG4400_A1_2018",

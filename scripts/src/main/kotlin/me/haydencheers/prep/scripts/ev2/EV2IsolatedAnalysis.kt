@@ -21,7 +21,7 @@ object EV2IsolatedAnalysis {
             for (transformation in 1 .. 16) {
                 var pcounter = 0
 
-                for ((pname, _) in Config.VARIANT_LEVELS) {
+                for ((pname, _) in Config.VARIANT_LEVELS.filter { it.first == "p6" }) {
                     var min = 100.0
                     var max = 0.0
                     var accumulator = 0.0
@@ -77,29 +77,29 @@ object EV2IsolatedAnalysis {
                         }
                     }
 
-//                    println("T${transformation}\t${pname}\t${accumulator}\t${sd.result}")
+                    println("T${transformation}\t${pname}\t${accumulator}\t${sd.result}")
 
-                    val avg = accumulator
-                    val stddev = sd.result
-                    val i = pcounter
-
+//                    val avg = accumulator
+//                    val stddev = sd.result
+//                    val i = pcounter
+//
 //                    println("% " + tool + " " + "T${transformation}" + " " + pname)
 //                    println("\\addplot[mark=*,black] coordinates { ($i,${String.format("%2.2f", avg)}) };")
 //                    println("\\addplot[mark=-,black] coordinates { ($i,${String.format("%2.2f", max)})($i,${String.format("%2.2f", min)}) };")
 //                    println("\\addplot[mark=*,red] coordinates { ($i,${String.format("%2.2f", min(avg+stddev, 100.0))}) };")
 //                    println("\\addplot[mark=*,red] coordinates { ($i,${String.format("%2.2f", max(avg-stddev, 0.0))}) };")
-
-
-                    if (pcounter == 1) {
-                        println("% ${tool} + T${transformation}")
-                        print("\\addplot[mark=*,black] coordinates {")
-                    }
-
-                    print("(${i},${accumulator.format("2.2f")})")
-
-                    if (pcounter == 6) {
-                        println("};")
-                    }
+//
+//
+//                    if (pcounter == 1) {
+//                        println("% ${tool} + T${transformation}")
+//                        print("\\addplot[mark=*,black] coordinates {")
+//                    }
+//
+//                    print("(${i},${accumulator.format("2.2f")})")
+//
+//                    if (pcounter == 6) {
+//                        println("};")
+//                    }
                 }
             }
 

@@ -13,7 +13,10 @@ object FileUtils {
         if (!Files.isDirectory(from)) throw IllegalArgumentException("File $from does not exist")
 
         Files.walk(from)
-            .filter { !Files.isHidden(it) && !it.fileName.toString().startsWith(".") }
+//            .filter {
+//                (Files.isRegularFile(it) && !Files.isHidden(it) && !it.fileName.toString().startsWith(".")) ||
+//                        Files.isRegularFile()
+//            }
             .forEachOrdered { file ->
                 Files.copy(file, to.resolve(from.relativize(file)), StandardCopyOption.REPLACE_EXISTING)
             }
@@ -23,10 +26,14 @@ object FileUtils {
         if (!Files.isDirectory(from)) throw IllegalArgumentException("File $from does not exist")
 
         Files.walk(from)
-            .filter { !Files.isHidden(it) && !it.fileName.toString().startsWith(".") }
-            .filter { Files.isDirectory(it) || it.fileName.toString().endsWith(".java") }
+            .filter { it.fileName.toString().endsWith(".java") }
             .forEachOrdered { file ->
-                Files.copy(file, to.resolve(from.relativize(file).toString()), StandardCopyOption.REPLACE_EXISTING)
+                val toPath = to.resolve(from.relativize(file).toString())
+                val parent = toPath.parent
+                if (!Files.exists(parent))
+                    Files.createDirectories(parent)
+
+                Files.copy(file, toPath, StandardCopyOption.REPLACE_EXISTING)
             }
     }
 

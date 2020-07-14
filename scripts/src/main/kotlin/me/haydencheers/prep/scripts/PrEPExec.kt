@@ -26,4 +26,24 @@ object PrEPExec {
 
         return false
     }
+
+    fun execute(config: Path, workingDir: Path, out: Path, err: Path, retryCount: Int, waitFor: Long): Boolean {
+        for (i in 1 .. retryCount) {
+            val confp = config.toAbsolutePath().toString()
+            val process = Forker.exec(Application::class.java, arrayOf(confp), workingDir = workingDir, out = out, err = err)
+
+            val result = process.waitFor(waitFor, TimeUnit.MINUTES)
+
+            if (result) {
+                val exitCode = process.exitValue()
+                if (exitCode == 0) return true
+            } else {
+                System.err.println("Time Limit exceeded")
+                process.destroy()
+                return false
+            }
+        }
+
+        return false
+    }
 }

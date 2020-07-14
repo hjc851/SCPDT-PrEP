@@ -4,6 +4,7 @@ import me.haydencheers.prep.normalise.Forker
 import me.haydencheers.prep.scripts.Config
 import me.haydencheers.prep.util.FileUtils
 import me.haydencheers.prep.util.JsonSerialiser
+import me.haydencheers.scpdt.AbstractJavaSCPDTool
 import me.haydencheers.scpdt.SCPDTool
 import me.haydencheers.scpdt.jplag.JPlagSCPDT
 import me.haydencheers.scpdt.naive.graph.NaivePDGEditDistanceSCPDT
@@ -29,7 +30,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.streams.toList
 
 object EV3AllForkingScript {
-    val MAX_PARALLEL = 32
+    val MAX_PARALLEL = 8
     val sem = Semaphore(MAX_PARALLEL)
 
     fun produceBindings(): List<SCPDTool> {
@@ -72,7 +73,6 @@ object EV3AllForkingScript {
             val collections = mutableMapOf<String, Pair<Path, MutableList<Path>>>()
 
             for (source in sources) {
-
                 if (Files.walk(source).filter { it.fileName.toString().endsWith(".java") }.count() == 0L)
                     continue
 
@@ -90,6 +90,7 @@ object EV3AllForkingScript {
 
             for ((key, value) in collections) {
                 val (original, variants) = value
+                if (variants.isEmpty()) continue
 
                 // Copy all to a single directory
                 val tmp = Files.createTempDirectory("ev3-tmp")
@@ -123,20 +124,16 @@ object EV3AllForkingScript {
                             err = err
                         )
 
-                        if (proc.waitFor(10, TimeUnit.SECONDS)) {
+                        if (proc.waitFor(2, TimeUnit.MINUTES)) {
                             if (proc.exitValue() == 0) {
                                 Files.copy(out, foutp)
                                 println("$pname::$key::${tool.id}")
                             } else {
-                                System.err.println("Error: $pname::$key::${tool.id}")
+                                System.err.println("Error: ${proc.exitValue()} $pname::$key::${tool.id}")
                             }
                         } else {
                             System.err.println("Timeout: $pname::$key::${tool.id}")
                             proc.destroy()
-
-                            if (tool.id.contains("Sim")) {
-                                Unit
-                            }
                         }
 
                         Files.walk(work)
@@ -161,10 +158,19 @@ object EV3AllForkingScript {
         }
 
         sem.acquire(MAX_PARALLEL)
+
+        System.exit(0)
     }
 }
 
+object NullOutputStream: OutputStream() {
+    override fun write(b: Int) {}
+}
+
 object SCPDTForkEntryPoint {
+
+    val TIME_LIMIT = 20 * 1000L
+
     @JvmStatic
     fun main(args: Array<String>) {
         if (args.size != 3) {
@@ -178,18 +184,34 @@ object SCPDTForkEntryPoint {
         val label = args[1]
         val dir = Paths.get(args[2])
 
+        AbstractJavaSCPDTool.mxHeap = "2000m"
         tool.thaw()
 
         try {
             val _out = System.out
-            System.setOut(PrintStream(FileOutputStream("/dev/null")))
+            System.setOut(PrintStream(NullOutputStream))
+
+            val supervisor = object : Thread() {
+                override fun run() {
+                    Thread.sleep(TIME_LIMIT)
+                    System.err.println("Timeout exceeded")
+                    System.exit(12)
+                }
+            }
+
+            supervisor.start()
 
             val result = tool.evaluateSubmissions(dir)
+
+            try { supervisor.interrupt() }
+            catch (e: Exception) { e.printStackTrace(System.err) }
 
             System.setOut(_out)
             JsonSerialiser.serialise(result, System.out)
         } finally {
             tool.close()
         }
+
+        System.exit(0)
     }
 }
