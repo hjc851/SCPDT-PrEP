@@ -11,7 +11,8 @@ import kotlin.reflect.KClass
 
 object JsonSerialiser {
     private val jsonb = JsonbBuilder.create()
-    private val ENTRY_NAME = "bean.data"
+    private val ENTRY_NAME1 = "bean.data"
+    private val ENTRY_NAME2 = "bean.txt"
 
     fun serialise(obj: Any, out: OutputStream) {
         jsonb.toJson(obj, out)
@@ -33,7 +34,7 @@ object JsonSerialiser {
         Files.newOutputStream(path).use { fout ->
             val zout = ZipOutputStream(fout)
 
-            val entry = ZipEntry(ENTRY_NAME)
+            val entry = ZipEntry(ENTRY_NAME1)
             zout.putNextEntry(entry)
             jsonb.toJson(bean, zout)
             zout.closeEntry()
@@ -45,7 +46,8 @@ object JsonSerialiser {
             val zin = ZipInputStream(fin)
             val entry = zin.nextEntry
 
-            if (entry.name != ENTRY_NAME) throw IllegalArgumentException("Invalid STRF file")
+            if (entry.name != ENTRY_NAME1 && entry.name != ENTRY_NAME2)
+                throw IllegalArgumentException("Invalid STRF file")
 
             return jsonb.fromJson(zin, cls.java)
         }

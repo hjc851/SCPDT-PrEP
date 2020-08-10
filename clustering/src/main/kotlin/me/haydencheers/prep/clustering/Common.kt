@@ -22,23 +22,23 @@ val compRoot = Paths.get("/media/haydencheers/Data/PrEP/comp/")
 
 val datasetNames = arrayOf(
     "SENG1110_A1_2017"
-    ,
-    "SENG1110_A2_2017"
-    ,
-    "SENG2050_A1_2019"
-    ,
-    "SENG2050_A2_2019"
-    ,
-    "SENG4400_A1_2018"
-    ,
-    "SENG4400_A2_2018"
+//    ,
+//    "SENG1110_A2_2017"
+//    ,
+//    "SENG2050_A1_2019"
+//    ,
+//    "SENG2050_A2_2019"
+//    ,
+//    "SENG4400_A1_2018"
+//    ,
+//    "SENG4400_A2_2018"
 )
 
 val toolNames = arrayOf(
     "Sherlock-Sydney"
     ,
-//    "Sherlock-Warwick"
-//    ,
+    "Sherlock-Warwick"
+    ,
     "Sim-3.0.2_Wine32"
     ,
     "JPlag"
@@ -70,6 +70,15 @@ val toolConfigs = mutableMapOf(
     "Naive Program Dependence Graph" to 0.2
 )
 
+val toolThresholds = mutableMapOf(
+    "Sherlock-Sydney" to 18.0,
+    "Sherlock-Warwick" to 55.0,
+    "Sim-3.0.2_Wine32" to 55.0,
+    "JPlag" to 60.0,
+    "Plaggie" to 70.0,
+    "Naive Program Dependence Graph" to 70.0
+)
+
 // Stats
 
 data class PRFScore (
@@ -79,15 +88,35 @@ data class PRFScore (
 )
 
 fun tpCount(scores: List<Score>, suspicious: List<Pair<String, String>>): Int {
-    return scores.count { it.isIn(suspicious) }
+    val sus = suspicious.flatMap { listOf(it.first, it.second) }.toSet()
+    val found = scores.flatMap { listOf(it.lhs, it.rhs) }.toSet()
+
+    return found.count { sus.contains(it) }
+
+//    return scores.count { it.isIn(suspicious) }
 }
 
 fun fpCount(scores: List<Score>, suspicious: List<Pair<String, String>>): Int {
-    return scores.count { !it.isIn(suspicious) }
+    val sus = suspicious.flatMap { listOf(it.first, it.second) }.toSet()
+    val found = scores.flatMap { listOf(it.lhs, it.rhs) }.toSet()
+
+    return found.count { !sus.contains(it) }
+
+//    return scores.count { !it.isIn(suspicious) }
 }
 
 fun fnCount(scores: List<Score>, suspicious: List<Pair<String, String>>): Int {
-    return suspicious.count { !it.isIn(scores) }
+    val sus = suspicious.flatMap { listOf(it.first, it.second) }.toSet()
+    val found = scores.flatMap { listOf(it.lhs, it.rhs) }.toSet()
+
+    return sus.count { !found.contains(it) }
+
+    return suspicious.filter { !it.isIn(scores) }
+        .flatMap { listOf(it.first, it.second) }
+        .toSet()
+        .count()
+
+//    return suspicious.count { !it.isIn(scores) }
 }
 
 fun Pair<String, String>.isIn(suspiciousItems: List<Score>): Boolean {
@@ -253,7 +282,7 @@ fun partitionVariantIds(scores: List<Score>): VariantPartition {
     )
 }
 
-val variantRoot = Paths.get("/media/haydencheers/Data/PrEP/Clustering-EV1B")
+val variantRoot = Paths.get("/media/haydencheers/Data/PrEP/Clustering-EV2")
 
 fun loadVariantScoresForTool(tool: String, ds: String, pname: String): List<Score> {
     val strfPath = variantRoot.resolve(ds).resolve(pname).resolve("out").resolve("scores-${tool}.strf")

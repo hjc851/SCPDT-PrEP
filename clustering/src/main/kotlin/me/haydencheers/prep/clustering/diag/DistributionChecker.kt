@@ -13,14 +13,14 @@ object DistributionChecker {
     fun main(args: Array<String>) {
         val tool = "Sherlock-Sydney"
 
-        val scores = loadToolScores(tool, "SENG1110_A1_2017")
+        val scores = loadToolScores(tool, "SENG4400_A1_2018")
 
         var rawScores = scores.map { it.score }
             .sorted()
 
         var lastSize = rawScores.size
-        for (i in -1 .. 99) {
-            rawScores = rawScores.dropWhile { it > i && it <= (i+1) }
+        for (i in -1 .. 99 step 2) {
+            rawScores = rawScores.dropWhile { it > i && it <= (i+2) }
             val diff = lastSize - rawScores.size
             lastSize = rawScores.size
 

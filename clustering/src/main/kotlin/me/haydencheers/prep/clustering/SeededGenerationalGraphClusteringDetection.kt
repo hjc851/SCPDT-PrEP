@@ -3,66 +3,14 @@ package me.haydencheers.prep.clustering
 import me.haydencheers.clustering.*
 import me.haydencheers.prep.clustering.util.ClusterGraph
 import me.haydencheers.prep.scripts.Config
+import kotlin.math.max
 
 val generationCombinations = mutableListOf(
-    Triple(true,  true,  false),  // G0 G1
-    Triple(false, true,  true),   // G1 G2
-    Triple(true,  false, true),   // G0 G2
+//    Triple(true,  true,  false)  // G0 G1
+//    Triple(false, true,  true)   // G1 G2
+//    Triple(true,  false, true),   // G0 G2
     Triple(true,  true,  true)    // G0 G1 G2
 )
-
-fun filterScoresForCombination(variantScores: List<Score>, combination: Triple<Boolean, Boolean, Boolean>): List<Score> {
-    val partition = partitionVariantIds(variantScores)
-    val (g0, g1, g2) = combination
-
-    val scores = mutableListOf<Score>()
-
-    if (g0 && g1) {
-        val links = partition.g0g1links
-        val genscores = variantScores.filter { it.isIn(links) }
-        scores.addAll(genscores)
-    }
-
-    if (g1 && g2) {
-        val links = partition.g1g2links
-        val genscores = variantScores.filter { it.isIn(links) }
-        scores.addAll(genscores)
-    }
-
-    if (g0 && g2) {
-        val links = partition.g0g2links
-        val genscores = variantScores.filter { it.isIn(links) }
-        scores.addAll(genscores)
-    }
-
-    return scores
-}
-
-fun Triple<Boolean, Boolean, Boolean>.label(): String {
-    val components = mutableListOf<String>()
-
-    if (first)  components.add("G0")
-    if (second) components.add("G1")
-    if (third)  components.add("G2")
-
-    return components.joinToString("-")
-}
-
-fun Triple<Boolean, Boolean, Boolean>.detectionOffsets(): Pair<Int, Int> {
-    val (g0, g1, g2) = this
-
-    return if (g0 && g1 && g2) {
-        9 to 9
-    } else if (g0 && g1) {
-        3 to 2
-    } else if (g1 && g2) {
-        9 to 2
-    } else if (g0 && g2) {
-        3 to 9
-    } else {
-        throw IllegalStateException("Unexpected generation combination")
-    }
-}
 
 object SeededGenerationalGraphClusteringDetection {
     @JvmStatic
@@ -98,12 +46,15 @@ object SeededGenerationalGraphClusteringDetection {
                         val vs = filterScoresForCombination(variantScores, combination)
                         val scores = (rawScores + vs).sortedBy { it.score }
 
+                        Unit
+
                         val variantSuspicious = vs.map { it.lhs to it.rhs }
                         val suspicious = rawSuspicious + variantSuspicious
 
-                        val (clusterOffset, collaborationOffset) = combination.detectionOffsets()
+                        val (clusterOffset, seededMaxCollab) = combination.detectionOffsets()
+
                         val maxClusters = dsMaxCluster + clusterOffset
-                        val maxCollaboration = dsMaxCollab + collaborationOffset
+                        val maxCollaboration = max(dsMaxCollab, seededMaxCollab)
 
                         val clusters = Bucketiser.clusters(scores, kdePrecision)
                         val graph = ClusterGraph()
@@ -121,14 +72,12 @@ object SeededGenerationalGraphClusteringDetection {
 
                             val components = graph.components()
                             val maxNodeDegree = components.maxBy { it.largestNodeDegree() }?.largestNodeDegree() ?: 0
-                            val largestConnectivity = components.maxBy { it.connectivityRatio() }?.connectivityRatio() ?: 0.0
 
                             threshold = b.start
                             val condition = { components.size > maxClusters || maxNodeDegree > maxCollaboration }
-
                             if (condition()) {
-                                val intersectScores = b.scores.filter { preNodes.contains(it.lhs) || preNodes.contains(it.rhs) }
-                                suspiciousScores.addAll(intersectScores)
+//                                val intersectScores = b.scores.filter { preNodes.contains(it.lhs) || preNodes.contains(it.rhs) }
+//                                suspiciousScores.addAll(intersectScores)
 
                                 break
                             }
@@ -161,5 +110,58 @@ object SeededGenerationalGraphClusteringDetection {
                 }
             }
         }
+    }
+}
+
+fun filterScoresForCombination(variantScores: List<Score>, combination: Triple<Boolean, Boolean, Boolean>): List<Score> {
+    val partition = partitionVariantIds(variantScores)
+    val (g0, g1, g2) = combination
+
+    val scores = mutableListOf<Score>()
+
+    if (g0 && g1 && g2) {
+        val links = partition.g0g1links + partition.g1g2links
+        val genscores = variantScores.filter { it.isIn(links) }
+        scores.addAll(genscores)
+    } else if (g0 && g1) {
+        val links = partition.g0g1links
+        val genscores = variantScores.filter { it.isIn(links) }
+        scores.addAll(genscores)
+    } else if (g1 && g2) {
+        val links = partition.g1g2links
+        val genscores = variantScores.filter { it.isIn(links) }
+        scores.addAll(genscores)
+    } else if (g0 && g2) {
+        val links = partition.g0g2links
+        val genscores = variantScores.filter { it.isIn(links) }
+        scores.addAll(genscores)
+    }
+
+    return scores
+}
+
+fun Triple<Boolean, Boolean, Boolean>.label(): String {
+    val components = mutableListOf<String>()
+
+    if (first)  components.add("G0")
+    if (second) components.add("G1")
+    if (third)  components.add("G2")
+
+    return components.joinToString("-")
+}
+
+fun Triple<Boolean, Boolean, Boolean>.detectionOffsets(): Pair<Int, Int> {
+    val (g0, g1, g2) = this
+
+    return if (g0 && g1 && g2) {
+        8 to 4
+    } else if (g0 && g1) {
+        3 to 4
+    } else if (g1 && g2) {
+        9 to 3
+    } else if (g0 && g2) {
+        3 to 9
+    } else {
+        throw IllegalStateException("Unexpected generation combination")
     }
 }

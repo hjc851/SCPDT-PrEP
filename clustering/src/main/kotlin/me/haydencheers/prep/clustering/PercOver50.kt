@@ -10,9 +10,9 @@ import me.haydencheers.strf.serialisation.STRFSerialiser
 object PercOver50 {
     @JvmStatic
     fun main(args: Array<String>) {
-        val THRESHOLD = 50
+        val THRESHOLD = 75
 
-        println("DS\tCnt\t> 50\t%")
+        println("DS\tCnt\t> ${THRESHOLD}\t%")
         for (tool in toolNames) {
             println(tool)
             for (ds in datasetNames) {
@@ -22,7 +22,10 @@ object PercOver50 {
                 val above50 = scores.filter { it.score > THRESHOLD }
                 val idsAbove50 = above50.flatMap { listOf(it.lhs, it.rhs) }.toSet()
 
-                val perc = idsAbove50.size.toDouble().div(subIds.size).times(100.0)
+                val perc = idsAbove50.size
+                    .toDouble()
+                    .div(subIds.size)
+                    .times(100.0)
 
                 println("$ds\t${subIds.size}\t${idsAbove50.size}\t$perc")
             }

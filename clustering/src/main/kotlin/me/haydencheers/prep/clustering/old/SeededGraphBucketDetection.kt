@@ -1,4 +1,4 @@
-package me.haydencheers.prep.clustering
+package me.haydencheers.prep.clustering.old
 
 import me.haydencheers.clustering.*
 import me.haydencheers.prep.clustering.util.ClusterGraph

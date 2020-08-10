@@ -13,7 +13,7 @@ import kotlin.streams.toList
 
 object GenerationDataSetGenerator {
 
-    val root = Paths.get("/media/haydencheers/Data/PrEP/Clustering-EV1B-Datasets")
+    val root = Paths.get("/media/haydencheers/Data/PrEP/Clustering-EV2-Datasets")
     val VARIANT_COUNT = 3
     val GENERATIONS = 2
 
@@ -97,26 +97,25 @@ object GenerationDataSetGenerator {
 
             randomSeed = 11121993
 
-            copies =
-                VARIANT_COUNT
+            copies = VARIANT_COUNT
 
             inject = InjectConfig().apply {
                 injectAssignment = false
 
-                injectFile = true
-                injectFileChance = chance
+                injectFile = false
+                injectFileChance = 0.0
                 injectFileMaxCount = 1
 
-                injectClass = true
-                injectClassChance = chance
+                injectClass = false
+                injectClassChance = 0.0
                 injectClassMaxCount = 1
 
-                injectMethod = true
-                injectMethodChance = chance
+                injectMethod = false
+                injectMethodChance = 0.0
                 injectMethodMaxCount = 2
 
-                injectBlock = true
-                injectBlockChance = chance
+                injectBlock = false
+                injectBlockChance = 0.0
                 injectBlockMaxStatements = 5
             }
 

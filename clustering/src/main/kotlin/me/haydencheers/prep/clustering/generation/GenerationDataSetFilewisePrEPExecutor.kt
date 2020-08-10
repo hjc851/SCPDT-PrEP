@@ -13,21 +13,27 @@ import me.haydencheers.scpdt.sherlocksydney.SherlockSydneySCPDT
 import me.haydencheers.scpdt.sherlockwarwick.SherlockWarwickSCPDT
 import me.haydencheers.scpdt.sim.SimWineSCPDTool
 import me.haydencheers.strf.beans.BatchEvaluationResult
+import me.haydencheers.strf.beans.FileComparisonResult
 import me.haydencheers.strf.beans.PairwiseComparisonResult
 import me.haydencheers.strf.serialisation.STRFSerialiser
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.*
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
+import java.util.concurrent.Semaphore
+import java.util.concurrent.TimeUnit
+import kotlin.Comparator
 import kotlin.streams.toList
 
-object GenerationDataSetPrEPExecutor {
+object GenerationDataSetFilewisePrEPExecutor {
 
     val dsroot = Config.DATASET_ROOT
 
-    val scoreroot = Paths.get("/media/haydencheers/Data/PrEP/Clustering-EV2")
-    val root = Paths.get("/media/haydencheers/Data/PrEP/Clustering-EV2")
+    val scoreroot = Paths.get("/media/haydencheers/Data/PrEP/Clustering-EV1B")
+    val root = Paths.get("/media/haydencheers/Data/PrEP/Clustering-EV1B-Filewise")
 
-    val variantroot = Paths.get("/media/haydencheers/Data/PrEP/Clustering-EV2-Datasets/1595204234")
+    val variantroot = Paths.get("/media/haydencheers/Data/PrEP/Clustering-EV1B-Datasets/2-generation")
 
     val GENERATIONS = 2
 
@@ -37,11 +43,16 @@ object GenerationDataSetPrEPExecutor {
     fun main(args: Array<String>) {
 
         val tools = listOf(
-            SherlockSydneySCPDT(),
-            SherlockWarwickSCPDT(),
-            JPlagSCPDT(),
-            SimWineSCPDTool(),
-            PlaggieSCPDT(),
+            SherlockSydneySCPDT()
+            ,
+            SherlockWarwickSCPDT()
+            ,
+            JPlagSCPDT()
+            ,
+            SimWineSCPDTool()
+            ,
+            PlaggieSCPDT()
+            ,
             NaivePDGEditDistanceSCPDT()
         )
 
@@ -58,26 +69,14 @@ object GenerationDataSetPrEPExecutor {
 
             for ((pname, pvalue) in Config.VARIANT_LEVELS) {
                 val work = Files.createDirectories(outroot.resolve(ds).resolve(pname))
+
                 for (tool in tools) {
-
-                    if (Files.exists(work.resolve("out").resolve("scores-${tool.id}.strf")))
+                    val scoref = work.resolve("out").resolve("scores-${tool.id}.json")
+                    if (Files.exists(scoref))
                         continue
-
-//                    if (Files.exists(work.resolve("out"))) {
-//                        if (Files.list(work.resolve("out")).count() > 2) {
-//                            continue
-//                        }
-//                    } else {
-//                        if (Files.exists(work)) {
-//                            Files.walk(work)
-//                                .sorted(Comparator.reverseOrder())
-//                                .forEach(Files::delete)
-//                        }
-//                    }
 
                     val psrc = work.resolve("src")
                     val pout = work.resolve("out")
-                    val pwork = work.resolve("work")
 
                     if (!Files.exists(psrc)) {
                         Files.createDirectories(psrc)
@@ -113,23 +112,6 @@ object GenerationDataSetPrEPExecutor {
 
                     if (!Files.exists(pout)) Files.createDirectory(pout)
 
-                    if (Files.exists(pwork)) {
-                        Files.walk(pwork)
-                            .sorted(Comparator.reverseOrder())
-                            .forEach(Files::delete)
-                    }
-
-                    Files.createDirectory(work.resolve("work"))
-
-                    val out = work.resolve("out.txt")
-                    val err = work.resolve("err.txt")
-
-                    Files.deleteIfExists(out)
-                    Files.deleteIfExists(err)
-
-                    val configpath = work.resolve("config.json")
-                    JsonSerialiser.serialise(config, configpath)
-
                     println("Starting - $ds $pname")
 
                     val allProgs = Files.list(psrc)
@@ -137,21 +119,44 @@ object GenerationDataSetPrEPExecutor {
                         .use { it.toList() }
 
                     println("\t${tool.id}")
-                    try {
-                        val result = tool.evaluateSubmissions(psrc, executor = exec)
 
-                        val comparisons = result.map { PairwiseComparisonResult(it.first, it.second, emptyList(), it.third)    }
+                    data class ProjectFilewiseComparison (
+                        val lhs: String,
+                        val rhs: String,
+                        val fcomps: List<FileComparisonResult>
+                    )
 
-                        val bean = BatchEvaluationResult(
-                            "${ds}-${tool.id}",
-                            result.flatMap { listOf(it.first, it.second) }.toSet(),
-                            comparisons
-                        )
+                    val allComparisons = Collections.synchronizedList(mutableListOf<ProjectFilewiseComparison>())
 
-                        STRFSerialiser.serialise(bean, pout.resolve("scores-${tool.id}.strf"))
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+                    val sem = Semaphore(64)
+                    for (l in 0 until allProgs.size) {
+                        val lproj = allProgs[l]
+                        for (r in l+1 until allProgs.size) {
+                            val rproj = allProgs[r]
+
+                            while (!sem.tryAcquire(1, 10, TimeUnit.SECONDS)) {
+                                println("\t${Date()} Awaiting permit ...")
+                            }
+
+                            CompletableFuture.runAsync {
+                                val fsims = tool.evaluateAllFiles(lproj, rproj)
+
+                                val fcomps = fsims.map { FileComparisonResult(it.first, it.second, it.third) }
+                                val projcomp = ProjectFilewiseComparison(lproj.fileName.toString(), rproj.fileName.toString(), fcomps)
+                                allComparisons.add(projcomp)
+
+                            }.whenComplete { void, throwable ->
+                                throwable?.printStackTrace()
+                                sem.release()
+                            }
+                        }
                     }
+
+                    while (!sem.tryAcquire(64, 10, TimeUnit.SECONDS)) {
+                        println("\t${Date()} Awaiting ${64-sem.availablePermits()} permits")
+                    }
+
+                    JsonSerialiser.serialise(allComparisons, scoref)
                 }
             }
         }

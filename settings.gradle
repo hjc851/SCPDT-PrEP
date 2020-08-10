@@ -26,3 +26,5 @@ sourceControl {
         producesModule("me.haydencheers.strf:serialiser")
     }
 }
+include 'bresilience'
+

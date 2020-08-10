@@ -1,21 +1,18 @@
-package me.haydencheers.clustering
+package me.haydencheers.prep.clustering
 
+import me.haydencheers.clustering.*
 import me.haydencheers.prep.clustering.util.ClusterGraph
 import me.haydencheers.strf.beans.BatchEvaluationResult
 import me.haydencheers.strf.serialisation.STRFSerialiser
-import org.apache.commons.math3.stat.StatUtils
 import javax.json.JsonObject
 
-object RawGraphClusteringDetection {
+object StaticRawThresholdXDetection {
     @JvmStatic
     fun main(args: Array<String>) {
-
         for (ds in datasetNames) {
-            println(ds)
 
             val dsConfig = datasetConfigs.getValue(ds)
-            val maxClusters = dsConfig.first
-            val maxCollaboration = dsConfig.second
+            val (maxClusters, maxCollaboration) = dsConfig
 
             val compfile = compRoot.resolve("${ds}.json")
             val comps = JsonSerialiser.deserialise(compfile, JsonObject::class)
@@ -29,9 +26,13 @@ object RawGraphClusteringDetection {
                     )
                 }
 
+            println(ds)
+
             for (tool in toolNames) {
                 val toolConfig = toolConfigs.getValue(tool)
                 val kdePrecision = toolConfig
+
+                val threshold = toolThresholds[tool]!!
 
                 val strfPath = scoreRoot.resolve(ds).resolve("scores-${tool}.strf")
                 val strf = STRFSerialiser.deserialise(strfPath, BatchEvaluationResult::class)
@@ -47,44 +48,13 @@ object RawGraphClusteringDetection {
                     }
                     .sortedByDescending { it.score }
 
-                val clusters = Bucketiser.clusters(scores, kdePrecision)
-                val graph = ClusterGraph()
-
-                var threshold = 100.0
-                val suspiciousScores = mutableListOf<Score>()
-
-                for (idx in clusters.indices.reversed()) {
-                    val b = clusters[idx]
-                    val preNodes = graph.getNodes()
-
-                    for (score in b.scores)
-                        graph.addEdge(score.lhs, score.rhs)
-
-                    val components = graph.components()
-                    val maxNodeDegree = components.maxBy { it.largestNodeDegree() }?.largestNodeDegree() ?: 0
-                    val largestConnectivity = components.maxBy { it.connectivityRatio() }?.connectivityRatio() ?: 0.0
-
-                    threshold = b.start
-                    val condition = { components.size > maxClusters || maxNodeDegree > maxCollaboration }
-
-                    if (condition()) {
-//                        val intersectScores = b.scores.filter { preNodes.contains(it.lhs) || preNodes.contains(it.rhs) }
-//                        suspiciousScores.addAll(intersectScores)
-
-                        break
-                    }
-
-                    suspiciousScores.addAll(b.scores)
-                }
+                val suspiciousScores = scores.takeWhile { it.score >= threshold }
 
                 val tp = tpCount(suspiciousScores, suspicious)
                 val fp = fpCount(suspiciousScores, suspicious)
                 val fn = fnCount(suspiciousScores, suspicious)
-                println("$tp\t$fp\t$fn")
 
-//                println("${tool} - ${ds}")
-                println("Found ${suspiciousScores.size} at threshold ${threshold}")
-//                calculateStatistics(suspiciousScores, suspicious)
+                println("$tp\t$fp\t$fn")
             }
 
             println()

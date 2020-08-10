@@ -11,7 +11,7 @@ object GenerationAvgSimEvaluator {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        val variantRoot = Paths.get("/media/haydencheers/Data/PrEP/Clustering-EV1B")
+        val variantRoot = Paths.get("/media/haydencheers/Data/PrEP/Clustering-EV2")
 
         for (ds in datasetNames) {
             for (tool in toolNames) {
